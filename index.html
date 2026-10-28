@@ -1,0 +1,1041 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>pyRevit BIM Studio v3.0 — Sketch to Script</title>
+  
+  <!-- Minimalist Aesthetic: Plus Jakarta Sans & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Markdown & Zip Libraries -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+  <style>
+    :root {
+      --bg: #fafafa;
+      --card-bg: #ffffff;
+      --border: #dbdbdb;
+      --border-subtle: #efefef;
+      --text: #262626;
+      --text-muted: #8e8e8e;
+      --accent: #0095f6;
+      --accent-hover: #1877f2;
+      --danger: #ed4956;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --ig-gradient: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+      --radius: 12px;
+      --radius-sm: 8px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-size: 14px;
+      line-height: 1.5;
+      padding-bottom: 60px;
+    }
+
+    /* Top Navigation */
+    header {
+      position: sticky;
+      top: 0;
+      background: rgba(255, 255, 255, 0.96);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border);
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      z-index: 100;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 700;
+      font-size: 16px;
+      letter-spacing: -0.3px;
+    }
+    .brand-logo {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      background: var(--ig-gradient);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+    }
+    .header-actions { display: flex; align-items: center; gap: 12px; }
+
+    /* Button System */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 8px 16px;
+      border-radius: 9999px;
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: all 0.15s ease;
+      background: #fff;
+    }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:hover { background: var(--accent-hover); }
+    .btn-outline { border-color: var(--border); color: var(--text); }
+    .btn-outline:hover { background: var(--border-subtle); border-color: #c7c7c7; }
+    .btn-drive { border-color: #e2e8f0; background: #f8fafc; color: #0f172a; }
+    .btn-drive.linked { border-color: var(--success); color: var(--success); background: #ecfdf5; }
+    .btn-sm { padding: 6px 14px; font-size: 12px; }
+
+    /* Layout Grid */
+    .container {
+      max-width: 1120px;
+      margin: 20px auto;
+      padding: 0 16px;
+      display: grid;
+      grid-template-columns: 340px 1fr;
+      gap: 24px;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+    }
+    .card-title {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+      margin-bottom: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    /* Instagram-Style Story Stage Progress */
+    .stages-bar {
+      grid-column: 1 / -1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 36px;
+      padding: 12px 0;
+    }
+    .stage-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+    }
+    .story-ring {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      padding: 2.5px;
+      background: #dbdbdb;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.25s ease;
+    }
+    .stage-item.active .story-ring { background: var(--ig-gradient); transform: scale(1.06); }
+    .stage-item.completed .story-ring { background: var(--success); }
+    .story-avatar {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      background: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 15px;
+      color: var(--text-muted);
+    }
+    .stage-item.active .story-avatar { color: var(--text); font-weight: 700; }
+    .stage-item.completed .story-avatar { color: var(--success); }
+    .stage-label { font-size: 11px; font-weight: 600; color: var(--text-muted); }
+    .stage-item.active .stage-label { color: var(--text); }
+
+    .sidebar { display: flex; flex-direction: column; gap: 16px; }
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      font-size: 11px;
+      font-weight: 600;
+      background: var(--border-subtle);
+    }
+    .status-badge.live { background: #e0f2fe; color: var(--accent); }
+    .status-badge.retrying { background: #fef3c7; color: var(--warning); }
+    .dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+
+    .drive-status-box {
+      border: 1px dashed var(--border);
+      border-radius: var(--radius-sm);
+      padding: 10px;
+      background: #fafafa;
+      margin-top: 8px;
+      font-size: 11.5px;
+      line-height: 1.4;
+      word-break: break-all;
+    }
+
+    .form-group { margin-bottom: 12px; }
+    .form-group label {
+      display: block;
+      font-size: 11.5px;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 5px;
+    }
+    .input-text, .input-select, textarea {
+      width: 100%;
+      padding: 8px 12px;
+      background: #fafafa;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-size: 12.5px;
+      font-family: inherit;
+      color: var(--text);
+      outline: none;
+    }
+    .input-text:focus, textarea:focus, .input-select:focus {
+      border-color: #a8a8a8;
+      background: #fff;
+    }
+
+    .drop-zone {
+      border: 1.5px dashed var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      text-align: center;
+      cursor: pointer;
+      background: #fafafa;
+    }
+    .preview-thumb {
+      max-width: 100%;
+      max-height: 160px;
+      border-radius: var(--radius-sm);
+      margin-top: 8px;
+      display: none;
+      border: 1px solid var(--border);
+    }
+
+    /* Main Console */
+    .main-content { display: flex; flex-direction: column; gap: 16px; }
+    .gate-banner {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--accent);
+      border-radius: var(--radius);
+      padding: 14px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+    .gate-info h4 { font-size: 13.5px; font-weight: 700; }
+    .gate-info p { font-size: 11.5px; color: var(--text-muted); }
+
+    .console-box {
+      min-height: 380px;
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 22px;
+      overflow-y: auto;
+      max-height: 600px;
+    }
+    .console-box pre, .console-box code {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      background: #f6f8fa;
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid #e1e4e8;
+      overflow-x: auto;
+    }
+    .console-box table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 14px 0;
+      font-size: 12px;
+    }
+    .console-box th, .console-box td {
+      border: 1px solid var(--border);
+      padding: 6px 10px;
+      text-align: left;
+    }
+    .console-box th { background: #fafafa; font-weight: 600; }
+
+    /* Interactive Hybrid Instruction Bar */
+    .stage-input-container {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .stage-input-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 11.5px;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+    .stage-input-row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.4);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      backdrop-filter: blur(2px);
+    }
+    .modal {
+      background: #fff;
+      width: 90%;
+      max-width: 520px;
+      border-radius: var(--radius);
+      padding: 22px;
+      border: 1px solid var(--border);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Bar -->
+  <header>
+    <div class="brand">
+      <div class="brand-logo"><i class="fa-solid fa-cube"></i></div>
+      <span>pyRevit BIM Studio v3.0</span>
+    </div>
+    <div class="header-actions">
+      <!-- Direct Google Drive / Local Folder Link -->
+      <button class="btn btn-drive btn-sm" id="btnLinkDrive" onclick="linkDriveDirectory()">
+        <i class="fa-brands fa-google-drive"></i>
+        <span id="driveBtnLabel">Link 007 RVT Library / Drive</span>
+      </button>
+
+      <button class="btn btn-outline btn-sm" onclick="openKeyModal()">
+        <i class="fa-solid fa-key"></i> Keys (<span id="keyCountBadge">0</span>)
+      </button>
+      
+      <span class="status-badge" id="tokenTracker">
+        <i class="fa-solid fa-bolt"></i> <span id="tokenCount">0 tokens</span>
+      </span>
+    </div>
+  </header>
+
+  <div class="container">
+    <!-- Story Stage Bar -->
+    <div class="stages-bar">
+      <div class="stage-item active" id="pillStage0" onclick="switchStage(0)">
+        <div class="story-ring"><div class="story-avatar"><i class="fa-solid fa-compass-drafting"></i></div></div>
+        <span class="stage-label">Intake</span>
+      </div>
+      <div class="stage-item" id="pillStage1" onclick="switchStage(1)">
+        <div class="story-ring"><div class="story-avatar"><i class="fa-solid fa-clone"></i></div></div>
+        <span class="stage-label">1. Copy</span>
+      </div>
+      <div class="stage-item" id="pillStage2" onclick="switchStage(2)">
+        <div class="story-ring"><div class="story-avatar"><i class="fa-solid fa-chart-pie"></i></div></div>
+        <span class="stage-label">2. Analysis</span>
+      </div>
+      <div class="stage-item" id="pillStage3" onclick="switchStage(3)">
+        <div class="story-ring"><div class="story-avatar"><i class="fa-brands fa-python"></i></div></div>
+        <span class="stage-label">3. pyRevit</span>
+      </div>
+    </div>
+
+    <!-- Left Controls -->
+    <aside class="sidebar">
+      <div class="card">
+        <div class="card-title">
+          <span>Project Setup</span>
+          <span class="status-badge live" id="systemStatus"><span class="dot"></span> Ready</span>
+        </div>
+        
+        <div class="form-group">
+          <label>Project Name</label>
+          <input type="text" id="projectName" class="input-text" value="RAMTECH_OFFICE" placeholder="e.g. RAMTECH_OFFICE">
+        </div>
+
+        <div class="form-group">
+          <label>Active Gemini Model</label>
+          <select id="geminiModelSelector" class="input-select">
+            <option value="gemini-3.6-flash">Gemini 3.6 Flash (Fast & Code)</option>
+            <option value="gemini-3.5-flash-lite">Gemini 3.5 Flash Lite (High Quota)</option>
+            <option value="gemini-3.1-flash-lite">Gemini 3.1 Flash Lite (High Quota)</option>
+            <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
+            <option value="gemini-2.5-pro">Gemini 2.5 Pro (Deep Reasoning)</option>
+            <option value="gemini-3.1-pro">Gemini 3.1 Pro</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>007 RVT MATERIALS Library</label>
+          <div class="drive-status-box" id="driveStatusText">
+            <i class="fa-solid fa-folder-open"></i> Link your local <strong>007 RVT MATERIALS</strong> or Google Drive folder to auto-scan existing <code>.rfa</code> families.
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Floor Plan / Sketch</label>
+          <div class="drop-zone" onclick="document.getElementById('fileInput').click()">
+            <i class="fa-regular fa-image" style="font-size: 20px; color: var(--text-muted);"></i>
+            <p style="font-size: 11px; margin-top: 4px; color: var(--text-muted);">Drop sketch or click to upload</p>
+            <input type="file" id="fileInput" accept="image/*,application/pdf" style="display: none;" onchange="handleFile(event)">
+            <img id="imagePreview" class="preview-thumb" alt="Preview">
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><span>pyRevit Error Patch</span></div>
+        <textarea id="tracebackInput" rows="2" placeholder="Paste traceback here..."></textarea>
+        <button class="btn btn-outline btn-sm" style="width: 100%; margin-top: 8px;" onclick="patchTraceback()">
+          <i class="fa-solid fa-wrench"></i> Fix Only This Error
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Workspace -->
+    <main class="main-content">
+      <div class="gate-banner" id="gateBanner">
+        <div class="gate-info">
+          <h4 id="gateTitle">Stage 0: Intake Ready</h4>
+          <p id="gateDesc">Attach your sketch and click Initialize Stage 1 or send custom instructions.</p>
+        </div>
+        <div id="gateActionArea"></div>
+      </div>
+
+      <!-- Main Display Console -->
+      <div class="console-box" id="consoleOutput">
+        <div style="color: var(--text-muted); text-align: center; padding: 60px 0;">
+          <i class="fa-solid fa-compass-drafting" style="font-size: 32px; margin-bottom: 10px;"></i>
+          <p>Ready to process architectural sketch. Provide API keys and upload your plan.</p>
+        </div>
+      </div>
+
+      <!-- Optional Instruction & Direct Prompt Box (Active for all stages) -->
+      <div class="stage-input-container">
+        <div class="stage-input-header">
+          <span id="inputLabelText"><i class="fa-solid fa-terminal"></i> Optional Stage Instructions / Direct Text Prompt:</span>
+          <span>Press Enter or click Trigger</span>
+        </div>
+        <div class="stage-input-row">
+          <input type="text" id="customStagePrompt" class="input-text" placeholder="Type instructions, answers to sketch questions, or custom layout changes..." onkeydown="if(event.key==='Enter') handleUnifiedAction()">
+          <button class="btn btn-primary btn-sm" id="btnPrimaryAction" onclick="handleUnifiedAction()">
+            <i class="fa-solid fa-play"></i> Initialize Stage 1
+          </button>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- API Modal -->
+  <div class="modal-overlay" id="keyModal">
+    <div class="modal">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+        <h3 style="font-size: 15px; font-weight: 700;">API Pool</h3>
+        <i class="fa-solid fa-xmark" style="cursor: pointer;" onclick="closeKeyModal()"></i>
+      </div>
+      <div class="form-group">
+        <label>Provider</label>
+        <select id="keyProvider" class="input-select">
+          <option value="gemini">Google Gemini / AI Studio</option>
+          <option value="groq">Groq API</option>
+          <option value="openrouter">OpenRouter API</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>API Key</label>
+        <input type="password" id="keyVal" class="input-text" placeholder="Paste key...">
+      </div>
+      <button class="btn btn-primary btn-sm" onclick="saveKey()"><i class="fa-solid fa-plus"></i> Add Key</button>
+
+      <div style="margin-top: 16px;">
+        <label style="font-size: 11.5px; font-weight: 600; color: var(--text-muted);">Saved Keys</label>
+        <div id="keyList" style="margin-top: 6px; max-height: 120px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentStage = 0;
+    let attachedImageBase64 = null;
+    let dirHandle = null;
+    let scannedFamilyFiles = [];
+    let totalTokensUsed = 0;
+    let retryAttempt = 0;
+    let maxRetries = 3;
+
+    let appState = {
+      stage1Text: "",
+      stage2Text: "",
+      stage3Script: "",
+      draftProjectName: "RAMTECH_OFFICE"
+    };
+
+    window.addEventListener("DOMContentLoaded", () => {
+      loadKeys();
+      loadDraft();
+      updateStageUI(0);
+    });
+
+    // --- DIRECT DRIVE & FILE SYSTEM ACCESS ---
+    async function linkDriveDirectory() {
+      if (!('showDirectoryPicker' in window)) {
+        alert("Your browser does not support local folder linking. Use Google Chrome or Microsoft Edge.");
+        return;
+      }
+      try {
+        dirHandle = await window.showDirectoryPicker({ mode: "readwrite" });
+        const driveBtn = document.getElementById("btnLinkDrive");
+        const btnLabel = document.getElementById("driveBtnLabel");
+        const statusBox = document.getElementById("driveStatusText");
+
+        driveBtn.classList.add("linked");
+        btnLabel.innerText = "Linked: " + dirHandle.name;
+
+        scannedFamilyFiles = [];
+        await scanDirectoryForRfa(dirHandle, "");
+
+        statusBox.innerHTML = `<span style="color:var(--success); font-weight:600;"><i class="fa-solid fa-check-circle"></i> Direct access active:</span> ${dirHandle.name}<br>` +
+          `Found <strong>${scannedFamilyFiles.length}</strong> <code>.rfa</code> families. pyRevit scripts will use exact paths from your Drive.`;
+      } catch (err) {
+        if (err.name !== 'AbortError') console.error(err);
+      }
+    }
+
+    async function scanDirectoryForRfa(handle, currentPath) {
+      for await (const entry of handle.values()) {
+        const fullPath = currentPath ? `${currentPath}\\${entry.name}` : entry.name;
+        if (entry.kind === "file" && entry.name.toLowerCase().endsWith(".rfa")) {
+          scannedFamilyFiles.push(fullPath);
+        } else if (entry.kind === "directory") {
+          await scanDirectoryForRfa(entry, fullPath);
+        }
+      }
+    }
+
+    async function directSavePushbutton(projectName, pythonScript) {
+      if (!dirHandle) {
+        alert("Please click 'Link 007 RVT Library / Drive' first.");
+        return;
+      }
+      try {
+        const folderName = `${projectName}.pushbutton`;
+        const pushBtnFolder = await dirHandle.getDirectoryHandle(folderName, { create: true });
+        
+        const scriptFile = await pushBtnFolder.getFileHandle("script.py", { create: true });
+        const scriptWritable = await scriptFile.createWritable();
+        await scriptWritable.write(pythonScript);
+        await scriptWritable.close();
+
+        const yamlContent = `title: ${projectName.replace(/_/g, " ")}\ntooltip: pyRevit 3-Stage Studio\nauthor: Architecture Studio\n`;
+        const yamlFile = await pushBtnFolder.getFileHandle("bundle.yaml", { create: true });
+        const yamlWritable = await yamlFile.createWritable();
+        await yamlWritable.write(yamlContent);
+        await yamlWritable.close();
+
+        alert(`Successfully saved to your folder:\n${folderName}\\script.py\n${folderName}\\bundle.yaml`);
+      } catch (err) {
+        console.error("Direct write failed", err);
+        alert("Direct write error: " + err.message);
+      }
+    }
+
+    // --- KEYS & LOCAL STORAGE ---
+    function getKeys() { return JSON.parse(localStorage.getItem("pyrevit_api_keys") || "[]"); }
+    function saveKey() {
+      const provider = document.getElementById("keyProvider").value;
+      const keyVal = document.getElementById("keyVal").value.trim();
+      if (!keyVal) return;
+      const keys = getKeys();
+      keys.push({ provider, key: keyVal, id: Date.now() });
+      localStorage.setItem("pyrevit_api_keys", JSON.stringify(keys));
+      document.getElementById("keyVal").value = "";
+      loadKeys();
+    }
+    function removeKey(id) {
+      let keys = getKeys().filter(k => k.id !== id);
+      localStorage.setItem("pyrevit_api_keys", JSON.stringify(keys));
+      loadKeys();
+    }
+    function loadKeys() {
+      const keys = getKeys();
+      document.getElementById("keyCountBadge").innerText = keys.length;
+      const listEl = document.getElementById("keyList");
+      listEl.innerHTML = "";
+      if (keys.length === 0) {
+        listEl.innerHTML = `<span style="font-size:11px; color:var(--text-muted);">No keys added yet.</span>`;
+        return;
+      }
+      keys.forEach(k => {
+        const row = document.createElement("div");
+        row.style = "display:flex; justify-content:space-between; align-items:center; background:#fafafa; padding:6px 10px; border-radius:6px; border:1px solid #efefef; font-size:11px;";
+        row.innerHTML = `<span><strong>${k.provider.toUpperCase()}</strong>: ••••••••${k.key.slice(-4)}</span>
+                         <i class="fa-solid fa-trash" style="cursor:pointer; color:var(--danger);" onclick="removeKey(${k.id})"></i>`;
+        listEl.appendChild(row);
+      });
+    }
+
+    function openKeyModal() { document.getElementById("keyModal").style.display = "flex"; }
+    function closeKeyModal() { document.getElementById("keyModal").style.display = "none"; }
+
+    function saveDraft() {
+      appState.draftProjectName = document.getElementById("projectName").value;
+      localStorage.setItem("pyrevit_active_draft", JSON.stringify(appState));
+    }
+
+    function loadDraft() {
+      const raw = localStorage.getItem("pyrevit_active_draft");
+      if (raw) {
+        try {
+          appState = JSON.parse(raw);
+          document.getElementById("projectName").value = appState.draftProjectName || "RAMTECH_OFFICE";
+          if (appState.stage3Script) switchStage(3);
+          else if (appState.stage2Text) switchStage(2);
+          else if (appState.stage1Text) switchStage(1);
+        } catch (e) {}
+      }
+    }
+
+    function handleFile(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        attachedImageBase64 = evt.target.result;
+        const img = document.getElementById("imagePreview");
+        img.src = attachedImageBase64;
+        img.style.display = "block";
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function playAlertChime() {
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(587.33, ctx.currentTime);
+        gain.gain.setValueAtTime(0.2, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.5);
+      } catch (e) {}
+    }
+
+    // --- MULTI-PROVIDER & RETRY ENGINE ---
+    async function executeWithFailover(promptText, requiresVision = false) {
+      const keys = getKeys();
+      if (keys.length === 0) return mockStageResponse(currentStage);
+
+      const selectedModel = document.getElementById("geminiModelSelector").value;
+      const geminiCascade = [
+        selectedModel,
+        "gemini-3.6-flash",
+        "gemini-3.5-flash-lite",
+        "gemini-3.1-flash-lite",
+        "gemini-2.5-flash"
+      ];
+      const uniqueModels = [...new Set(geminiCascade)];
+
+      let enrichedPrompt = promptText;
+      if (scannedFamilyFiles.length > 0 && currentStage >= 2) {
+        enrichedPrompt += `\n\nVerified RVT Families physically present in user's linked Drive:\n` + scannedFamilyFiles.slice(0, 80).join("\n");
+      }
+
+      for (let i = 0; i < keys.length; i++) {
+        const item = keys[i];
+        try {
+          document.getElementById("systemStatus").className = "status-badge live";
+
+          if (item.provider === "gemini") {
+            for (let m = 0; m < uniqueModels.length; m++) {
+              const modelToTry = uniqueModels[m];
+              try {
+                document.getElementById("systemStatus").innerHTML = `<span class="dot"></span> Calling ${modelToTry}...`;
+                const res = await callGemini(item.key, enrichedPrompt, requiresVision, modelToTry);
+                if (res) { retryAttempt = 0; return res; }
+              } catch (modelErr) {
+                console.warn(`Gemini model ${modelToTry} failed:`, modelErr);
+              }
+            }
+          } else if (item.provider === "groq") {
+            document.getElementById("systemStatus").innerHTML = `<span class="dot"></span> Calling Groq...`;
+            const res = await callGroq(item.key, enrichedPrompt);
+            if (res) { retryAttempt = 0; return res; }
+          } else if (item.provider === "openrouter") {
+            document.getElementById("systemStatus").innerHTML = `<span class="dot"></span> Calling OpenRouter...`;
+            const res = await callOpenRouter(item.key, enrichedPrompt);
+            if (res) { retryAttempt = 0; return res; }
+          }
+        } catch (err) {
+          console.warn(`Key for ${item.provider} failed:`, err);
+        }
+      }
+
+      if (retryAttempt < maxRetries) {
+        retryAttempt++;
+        playAlertChime();
+        for (let s = 60; s > 0; s--) {
+          document.getElementById("systemStatus").className = "status-badge retrying";
+          document.getElementById("systemStatus").innerHTML = `<span class="dot"></span> Quota reached. Retry in ${s}s...`;
+          await new Promise(r => setTimeout(r, 1000));
+        }
+        return await executeWithFailover(promptText, requiresVision);
+      } else {
+        playAlertChime();
+        saveDraft();
+        alert("All API models and keys reached rate limits. Saved draft safely.");
+        document.getElementById("systemStatus").className = "status-badge";
+        document.getElementById("systemStatus").innerHTML = `<span class="dot"></span> Draft Saved`;
+        throw new Error("Quota exhausted.");
+      }
+    }
+
+    async function callGemini(key, text, useVision, modelName = "gemini-3.6-flash") {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${key}`;
+      const contents = [];
+      const parts = [{ text }];
+      if (useVision && attachedImageBase64) {
+        const base64Data = attachedImageBase64.split(",")[1];
+        const mime = attachedImageBase64.split(";")[0].split(":")[1];
+        parts.push({ inlineData: { mimeType: mime, data: base64Data } });
+      }
+      contents.push({ role: "user", parts });
+
+      const resp = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ contents })
+      });
+      if (!resp.ok) {
+        const errText = await resp.text();
+        throw new Error(`${resp.status} - ${errText}`);
+      }
+      const json = await resp.json();
+      const output = json.candidates[0].content.parts[0].text;
+      totalTokensUsed += json.usageMetadata ? json.usageMetadata.totalTokenCount : 1200;
+      updateTokenDisplay();
+      return output;
+    }
+
+    async function callGroq(key, text) {
+      const resp = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "llama-3.1-8b-instant",
+          messages: [{ role: "user", content: text }]
+        })
+      });
+      if (!resp.ok) throw new Error(resp.statusText);
+      const json = await resp.json();
+      totalTokensUsed += json.usage ? json.usage.total_tokens : 1000;
+      updateTokenDisplay();
+      return json.choices[0].message.content;
+    }
+
+    async function callOpenRouter(key, text) {
+      const resp = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "openai/gpt-4o-mini",
+          messages: [{ role: "user", content: text }]
+        })
+      });
+      if (!resp.ok) throw new Error(resp.statusText);
+      const json = await resp.json();
+      totalTokensUsed += json.usage ? json.usage.total_tokens : 1000;
+      updateTokenDisplay();
+      return json.choices[0].message.content;
+    }
+
+    function updateTokenDisplay() {
+      document.getElementById("tokenCount").innerText = `${totalTokensUsed.toLocaleString()} tokens`;
+    }
+
+    // --- HYBRID ACTIONS: PUSH BUTTON OR FREE-FORM TEXT ---
+    async function handleUnifiedAction() {
+      const customInput = document.getElementById("customStagePrompt");
+      const userInstruction = customInput.value.trim();
+
+      if (currentStage === 0) {
+        await runStage1(userInstruction);
+      } else if (currentStage === 1) {
+        if (userInstruction) {
+          await sendFeedback(1, userInstruction);
+        } else {
+          await runStage2("");
+        }
+      } else if (currentStage === 2) {
+        if (userInstruction) {
+          await sendFeedback(2, userInstruction);
+        } else {
+          await runStage3("");
+        }
+      } else if (currentStage === 3) {
+        if (userInstruction) {
+          await sendFeedback(3, userInstruction);
+        } else {
+          await saveDirectPushbuttonAction();
+        }
+      }
+      customInput.value = "";
+    }
+
+    async function sendFeedback(stageNum, feedbackText) {
+      const out = document.getElementById("consoleOutput");
+      out.innerHTML += `<div style="background:#f0f7ff; padding:10px 14px; border-radius:8px; margin:14px 0; border:1px solid #bfdbfe;">
+                          <strong>Your instruction:</strong> ${escapeHtml(feedbackText)}
+                        </div>
+                        <p style="color:var(--text-muted);"><i class="fa-solid fa-spinner fa-spin"></i> Updating Stage ${stageNum} based on your feedback...</p>`;
+      
+      const prompt = `You are currently in STAGE ${stageNum} under Master Prompt v2.0.
+The user provided this feedback/instruction:
+"${feedbackText}"
+
+Update STAGE ${stageNum} deliverables strictly adhering to this instruction while keeping the complete structured tables and rules.`;
+
+      try {
+        const res = await executeWithFailover(prompt, false);
+        if (stageNum === 1) appState.stage1Text = res;
+        else if (stageNum === 2) appState.stage2Text = res;
+        else if (stageNum === 3) appState.stage3Script = extractCode(res);
+        saveDraft();
+        if (stageNum === 3) {
+          out.innerHTML = `<h3>Updated pyRevit Script</h3><pre><code>${escapeHtml(appState.stage3Script)}</code></pre>`;
+        } else {
+          out.innerHTML = marked.parse(res);
+        }
+      } catch (err) {
+        out.innerHTML += `<p style="color:var(--danger);">Error: ${err.message}</p>`;
+      }
+    }
+
+    async function runStage1(optionalInstruction = "") {
+      updateStageUI(1);
+      const out = document.getElementById("consoleOutput");
+      out.innerHTML = `<p style="color:var(--text-muted);"><i class="fa-solid fa-spinner fa-spin"></i> Reading sketch and reproducing exact copy...</p>`;
+      
+      let prompt = `Follow Master Prompt v2.0 for Revit pyRevit automation. Perform STAGE 1: EXACT COPY only. Output Context Read-Back, Element Register Table, Exact-Copy ASCII Plan, Schedules (Dimensioned/Scaled/Estimated), Discrepancies, and Completeness Gate. Conclude with: "Please review. Reply 'Copy approved' or tell me what to correct."`;
+      if (optionalInstruction) {
+        prompt += `\nAdditional user intake instructions: ${optionalInstruction}`;
+      }
+
+      try {
+        const res = await executeWithFailover(prompt, true);
+        appState.stage1Text = res;
+        saveDraft();
+        out.innerHTML = marked.parse(res);
+      } catch (e) {
+        out.innerHTML = `<p style="color:var(--danger);">Error running Stage 1: ${e.message}</p>`;
+      }
+    }
+
+    async function runStage2(optionalInstruction = "") {
+      updateStageUI(2);
+      const out = document.getElementById("consoleOutput");
+      out.innerHTML = `<p style="color:var(--text-muted);"><i class="fa-solid fa-spinner fa-spin"></i> Performing Context, Egress, and Spatial Analysis...</p>`;
+
+      let prompt = `Trigger: "Copy approved". Proceed to STAGE 2: ANALYSIS & RECOMMENDATIONS under Master Prompt v2.0. Generate Area Budget, Circulation/Egress, Wet-Zone stacking, Recommendations Table, Proposed Layout, and Coordinate Schedule with (X,Y) from SW(0,0). Conclude with: "Please review. Reply 'Proceed to pyRevit script' or specify revisions."`;
+      if (optionalInstruction) {
+        prompt += `\nUser layout guidance: ${optionalInstruction}`;
+      }
+
+      try {
+        const res = await executeWithFailover(prompt, false);
+        appState.stage2Text = res;
+        saveDraft();
+        out.innerHTML = marked.parse(res);
+      } catch (e) {
+        out.innerHTML = `<p style="color:var(--danger);">Error running Stage 2: ${e.message}</p>`;
+      }
+    }
+
+    async function runStage3(optionalInstruction = "") {
+      updateStageUI(3);
+      const out = document.getElementById("consoleOutput");
+      out.innerHTML = `<p style="color:var(--text-muted);"><i class="fa-solid fa-spinner fa-spin"></i> Building IronPython 2.7 zero-fail pyRevit production script...</p>`;
+
+      let prompt = `Trigger: "Proceed to pyRevit script". Proceed to STAGE 3: pyRevit Script under Master Prompt v2.0. IronPython 2.7 compliant, no f-strings, units M=1.0/0.3048, MM=1.0/304.8, coordinate conversion pt_ft(x, y, z) with (D - y)*M for true North, WarnKiller failure preprocessor, merge_intervals for wall overlap prevention, LoadOpts(IFamilyLoadOptions), and placed_set fingerprinting. Output valid executable script.py block only.`;
+      if (optionalInstruction) {
+        prompt += `\nAdditional script directives: ${optionalInstruction}`;
+      }
+
+      try {
+        const res = await executeWithFailover(prompt, false);
+        appState.stage3Script = extractCode(res);
+        saveDraft();
+        out.innerHTML = `<h3>Generated pyRevit Script</h3><pre><code>${escapeHtml(appState.stage3Script)}</code></pre>`;
+      } catch (e) {
+        out.innerHTML = `<p style="color:var(--danger);">Error running Stage 3: ${e.message}</p>`;
+      }
+    }
+
+    async function patchTraceback() {
+      const tb = document.getElementById("tracebackInput").value.trim();
+      if (!tb) return alert("Please paste pyRevit error traceback.");
+      const out = document.getElementById("consoleOutput");
+      out.innerHTML = `<p style="color:var(--text-muted);"><i class="fa-solid fa-spinner fa-spin"></i> Patching pyRevit error...</p>`;
+
+      const prompt = `Fix only this:\n${tb}\nApply Master Prompt v2.0 rules to patch the pyRevit script cleanly.`;
+      try {
+        const res = await executeWithFailover(prompt, false);
+        appState.stage3Script = extractCode(res);
+        saveDraft();
+        updateStageUI(3);
+        out.innerHTML = `<h3>Patched pyRevit Script</h3><pre><code>${escapeHtml(appState.stage3Script)}</code></pre>`;
+      } catch (e) {
+        out.innerHTML = `<p style="color:var(--danger);">Error patching: ${e.message}</p>`;
+      }
+    }
+
+    function updateStageUI(stage) {
+      currentStage = stage;
+      [0, 1, 2, 3].forEach(s => {
+        const pill = document.getElementById(`pillStage${s}`);
+        pill.classList.remove("active", "completed");
+        if (s === stage) pill.classList.add("active");
+        else if (s < stage) pill.classList.add("completed");
+      });
+
+      const gateTitle = document.getElementById("gateTitle");
+      const gateDesc = document.getElementById("gateDesc");
+      const gateActions = document.getElementById("gateActionArea");
+      const btnPrimary = document.getElementById("btnPrimaryAction");
+      const customInput = document.getElementById("customStagePrompt");
+      const inputLabel = document.getElementById("inputLabelText");
+
+      if (stage === 0) {
+        gateTitle.innerText = "Stage 0: Project Intake";
+        gateDesc.innerText = "Attach your floor plan sketch and click Initialize or type custom instructions.";
+        gateActions.innerHTML = `<button class="btn btn-primary btn-sm" onclick="handleUnifiedAction()">Initialize Stage 1</button>`;
+        btnPrimary.innerHTML = `<i class="fa-solid fa-play"></i> Initialize Stage 1`;
+        customInput.placeholder = "Optional intake notes (e.g. wall thickness, building code, target ceiling heights)...";
+        inputLabel.innerHTML = `<i class="fa-solid fa-terminal"></i> Optional Intake Instructions:`;
+      } else if (stage === 1) {
+        gateTitle.innerText = "Stage 1: Exact Copy Reproduction";
+        gateDesc.innerText = "Review read-back. Type revisions or click approve to advance.";
+        gateActions.innerHTML = `<button class="btn btn-primary btn-sm" onclick="handleUnifiedAction()"><i class="fa-solid fa-check"></i> Copy approved</button>`;
+        btnPrimary.innerHTML = `<i class="fa-solid fa-check"></i> Copy approved`;
+        customInput.placeholder = "Clarify unreadable sketch notes or revise room names (optional)...";
+        inputLabel.innerHTML = `<i class="fa-solid fa-terminal"></i> Optional Stage 1 Clarifications:`;
+      } else if (stage === 2) {
+        gateTitle.innerText = "Stage 2: Spatial & Egress Analysis";
+        gateDesc.innerText = "Critique recommendations, request room size adjustments, or advance to script.";
+        gateActions.innerHTML = `<button class="btn btn-primary btn-sm" onclick="handleUnifiedAction()"><i class="fa-solid fa-code"></i> Proceed to pyRevit script</button>`;
+        btnPrimary.innerHTML = `<i class="fa-solid fa-code"></i> Proceed to pyRevit`;
+        customInput.placeholder = "Request layout revisions or changes to fixture placements (optional)...";
+        inputLabel.innerHTML = `<i class="fa-solid fa-terminal"></i> Optional Stage 2 Feedback:`;
+      } else if (stage === 3) {
+        gateTitle.innerText = "Stage 3: Zero-Fail pyRevit Script";
+        gateDesc.innerText = "Production IronPython 2.7 script ready. Save straight to your linked folder.";
+        gateActions.innerHTML = `
+          <div style="display:flex; gap:8px;">
+            <button class="btn btn-drive btn-sm" onclick="saveDirectPushbuttonAction()"><i class="fa-brands fa-google-drive"></i> Save Pushbutton</button>
+            <button class="btn btn-outline btn-sm" onclick="downloadZip()"><i class="fa-solid fa-download"></i> .ZIP</button>
+          </div>
+        `;
+        btnPrimary.innerHTML = `<i class="fa-solid fa-save"></i> Save Pushbutton`;
+        customInput.placeholder = "Type specific script modifications or parameter overrides (optional)...";
+        inputLabel.innerHTML = `<i class="fa-solid fa-terminal"></i> Optional Stage 3 Script Overrides:`;
+      }
+    }
+
+    function switchStage(stage) {
+      updateStageUI(stage);
+      const out = document.getElementById("consoleOutput");
+      if (stage === 1 && appState.stage1Text) out.innerHTML = marked.parse(appState.stage1Text);
+      else if (stage === 2 && appState.stage2Text) out.innerHTML = marked.parse(appState.stage2Text);
+      else if (stage === 3 && appState.stage3Script) {
+        out.innerHTML = `<h3>Generated pyRevit Script</h3><pre><code>${escapeHtml(appState.stage3Script)}</code></pre>`;
+      }
+    }
+
+    async function saveDirectPushbuttonAction() {
+      const pName = document.getElementById("projectName").value.trim() || "Project";
+      if (!dirHandle) {
+        const ok = confirm("Link your pyRevit extension directory first?");
+        if (ok) await linkDriveDirectory();
+        else return;
+      }
+      if (dirHandle) await directSavePushbutton(pName, appState.stage3Script);
+    }
+
+    function downloadZip() {
+      const pName = document.getElementById("projectName").value.trim() || "Project";
+      const zip = new JSZip();
+      const folder = zip.folder(`${pName}.pushbutton`);
+      folder.file("script.py", appState.stage3Script);
+      folder.file("bundle.yaml", `title: ${pName.replace(/_/g, " ")}\ntooltip: pyRevit Layout Script\nauthor: Studio\n`);
+
+      zip.generateAsync({ type: "blob" }).then(content => {
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(content);
+        a.download = `${pName}.pushbutton.zip`;
+        a.click();
+      });
+    }
+
+    function mockStageResponse(stage) {
+      if (stage === 1) {
+        return `## Context Read-Back\nTypology: Municipal Civic Hall | 2 Levels | North: +Y True North | Scale: 1:100\n\n### Element Register Table\n| Level | Rooms | Walls | Doors | Windows | Stairs | Fixtures |\n| :--- | :--- | :--- | :--- | :--- | :--- | :--- |\n| Level 1 | 8 | 18 | 12 | 14 | 1 | 34 |\n| Level 2 | 6 | 14 | 8 | 10 | 1 | 22 |\n\nPlease review. Reply 'Copy approved' or tell me what to correct.`;
+      } else if (stage === 2) {
+        return `## Comprehensive Analysis\n- Net Program Efficiency: 82%\n- Wet-zone alignment: 100% stacked over sanitary chase.\n\nPlease review. Reply 'Proceed to pyRevit script' or specify revisions.`;
+      } else {
+        return `\`\`\`python\n# -*- coding: utf-8 -*-\nimport os, sys, math, clr\nclr.AddReference("RevitAPI")\nclr.AddReference("RevitAPIUI")\nimport Autodesk.Revit.DB as DB\nfrom pyrevit import revit, forms\n\ndoc = revit.doc\napp = doc.Application\nM = 1.0 / 0.3048\nMM = 1.0 / 304.8\nROOT = r"G:\\My Drive\\007 RVT MATERIALS"\n\ndef pt_ft(x, y, z=0.0):\n    D = 20.0\n    return DB.XYZ(x * M, (D - y) * M, z)\n\nprint("pyRevit script ready.")\n\`\`\``;
+      }
+    }
+
+    function extractCode(text) {
+      const match = text.match(/```python([\s\S]*?)```/) || text.match(/```([\s\S]*?)```/);
+      return match ? match[1].trim() : text;
+    }
+
+    function escapeHtml(str) {
+      return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+  </script>
+</body>
+</html>
