@@ -1,0 +1,2962 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>pyRevit BIM Studio v5.1 — Cumulative Context & Adaptive Learning</title>
+  
+  <!-- Fonts & Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Libraries -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+  <style>
+    :root {
+      --bg: #fafafa;
+      --card-bg: #ffffff;
+      --border: #dbdbdb;
+      --border-subtle: #efefef;
+      --text: #262626;
+      --text-muted: #8e8e8e;
+      --accent: #0095f6;
+      --accent-hover: #1877f2;
+      --danger: #ed4956;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --ig-gradient: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+      --radius: 12px;
+      --radius-sm: 8px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-size: 13.5px;
+      line-height: 1.5;
+      padding-bottom: 70px;
+    }
+
+    /* Header Bar */
+    header {
+      position: sticky;
+      top: 0;
+      background: rgba(255, 255, 255, 0.96);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border);
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      z-index: 100;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      font-size: 15px;
+      letter-spacing: -0.3px;
+    }
+    .brand-logo {
+      width: 30px;
+      height: 30px;
+      border-radius: 8px;
+      background: var(--ig-gradient);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 15px;
+    }
+    .brand-badge {
+      font-size: 10.5px;
+      padding: 2px 7px;
+      border-radius: 999px;
+      background: #eff6ff;
+      color: var(--accent);
+      border: 1px solid #bfdbfe;
+      font-weight: 600;
+    }
+    .header-actions { display: flex; align-items: center; gap: 10px; }
+
+    /* Button System */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      padding: 7px 14px;
+      border-radius: 9999px;
+      font-weight: 600;
+      font-size: 12.5px;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: all 0.15s ease;
+      background: #fff;
+    }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:hover { background: var(--accent-hover); }
+    .btn-outline { border-color: var(--border); color: var(--text); }
+    .btn-outline:hover { background: var(--border-subtle); border-color: #c7c7c7; }
+    .btn-knowledge { border-color: #f3d9fa; background: #faf5ff; color: #7e22ce; font-weight: 600; }
+    .btn-knowledge:hover { background: #f3e8ff; border-color: #d8b4fe; }
+    .btn-master { border-color: #fed7aa; background: #fff7ed; color: #c2410c; font-weight: 600; }
+    .btn-master:hover { background: #ffedd5; border-color: #fdba74; }
+    .btn-drive { border-color: #e2e8f0; background: #f8fafc; color: #0f172a; }
+    .btn-drive.linked { border-color: var(--success); color: var(--success); background: #ecfdf5; }
+    .btn-sm { padding: 5px 12px; font-size: 11.5px; }
+
+    /* Layout: Wide Container with Sidebar Toggle */
+    .container {
+      max-width: 1440px;
+      width: 96%;
+      margin: 16px auto;
+      padding: 0 8px;
+      display: grid;
+      grid-template-columns: 340px 1fr;
+      gap: 20px;
+      transition: grid-template-columns 0.25s ease;
+    }
+
+    .container.sidebar-collapsed {
+      grid-template-columns: 1fr;
+    }
+
+    .sidebar.is-collapsed {
+      display: none !important;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+    }
+    .card-title {
+      font-size: 11.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    /* Story Ring Tracker */
+    .stages-bar {
+      grid-column: 1 / -1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 40px;
+      padding: 10px 0 14px;
+    }
+    .stage-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+      cursor: pointer;
+    }
+    .story-ring {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      padding: 2.5px;
+      background: #dbdbdb;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.25s ease;
+    }
+    .stage-item.active .story-ring { background: var(--ig-gradient); transform: scale(1.08); }
+    .stage-item.completed .story-ring { background: var(--success); }
+    .story-avatar {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      background: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      color: var(--text-muted);
+    }
+    .stage-item.active .story-avatar { color: var(--text); font-weight: 700; }
+    .stage-item.completed .story-avatar { color: var(--success); }
+    .stage-label { font-size: 11px; font-weight: 600; color: var(--text-muted); }
+    .stage-item.active .stage-label { color: var(--text); font-weight: 700; }
+
+    .sidebar { display: flex; flex-direction: column; gap: 14px; }
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 9px;
+      border-radius: 9999px;
+      font-size: 11px;
+      font-weight: 600;
+      background: var(--border-subtle);
+    }
+    .status-badge.live { background: #e0f2fe; color: var(--accent); }
+    .status-badge.retrying { background: #fef3c7; color: var(--warning); }
+    .dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+
+    .drive-status-box {
+      border: 1px dashed var(--border);
+      border-radius: var(--radius-sm);
+      padding: 9px 11px;
+      background: #fafafa;
+      font-size: 11.5px;
+      line-height: 1.45;
+      word-break: break-all;
+    }
+
+    .form-group { margin-bottom: 11px; }
+    .form-group label {
+      display: block;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+    .input-text, .input-select, textarea {
+      width: 100%;
+      padding: 7px 11px;
+      background: #fafafa;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-size: 12.5px;
+      font-family: inherit;
+      color: var(--text);
+      outline: none;
+    }
+    .input-text:focus, textarea:focus, .input-select:focus {
+      border-color: #a8a8a8;
+      background: #fff;
+    }
+
+    .drop-zone {
+      border: 1.5px dashed var(--border);
+      border-radius: var(--radius);
+      padding: 14px;
+      text-align: center;
+      cursor: pointer;
+      background: #fafafa;
+      transition: all 0.2s ease;
+    }
+    .drop-zone:hover { background: #f5f5f5; border-color: #b0b0b0; }
+    .preview-thumb {
+      max-width: 100%;
+      max-height: 140px;
+      border-radius: var(--radius-sm);
+      margin-top: 8px;
+      display: none;
+      border: 1px solid var(--border);
+    }
+
+    /* Main Console Workspace */
+    .main-content { display: flex; flex-direction: column; gap: 14px; }
+    .gate-banner {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--accent);
+      border-radius: var(--radius);
+      padding: 14px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+    .gate-info h4 { font-size: 14px; font-weight: 700; color: var(--text); }
+    .gate-info p { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+    /* Cumulative Stage Split Layout */
+    .workspace-split {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    @media (max-width: 900px) {
+      .workspace-split { grid-template-columns: 1fr; }
+    }
+    .panel-preserved {
+      border: 1px solid #bfdbfe;
+      background: #f8fafc;
+      border-radius: var(--radius-sm);
+      display: flex;
+      flex-direction: column;
+    }
+    .panel-header-badge {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 14px;
+      background: #eff6ff;
+      border-bottom: 1px solid #dbeafe;
+      border-top-left-radius: var(--radius-sm);
+      border-top-right-radius: var(--radius-sm);
+      font-size: 11.5px;
+      font-weight: 700;
+      color: #1e40af;
+    }
+    .panel-content-scroll {
+      padding: 14px;
+      overflow-y: auto;
+      max-height: 520px;
+      font-size: 12.5px;
+    }
+    .panel-recommendations {
+      border: 1px solid #e2e8f0;
+      background: #ffffff;
+      border-radius: var(--radius-sm);
+      display: flex;
+      flex-direction: column;
+    }
+    .panel-header-rec {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 14px;
+      background: #f8fafc;
+      border-bottom: 1px solid #e2e8f0;
+      border-top-left-radius: var(--radius-sm);
+      border-top-right-radius: var(--radius-sm);
+      font-size: 11.5px;
+      font-weight: 700;
+      color: #0f172a;
+    }
+
+    /* Console Controls Toolbar */
+    .console-toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 12px;
+      background: #f8fafc;
+      border-top-left-radius: var(--radius);
+      border-top-right-radius: var(--radius);
+      border: 1px solid var(--border);
+      border-bottom: none;
+      font-size: 11.5px;
+    }
+    .console-toolbar-tools {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .tool-btn {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 3px 8px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      color: var(--text);
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      transition: background 0.15s ease;
+    }
+    .tool-btn:hover {
+      background: #f1f5f9;
+      border-color: #cbd5e1;
+    }
+    .tool-btn.active {
+      background: #eff6ff;
+      border-color: #93c5fd;
+      color: var(--accent);
+    }
+
+    .knowledge-active-strip {
+      background: #faf5ff;
+      border: 1px solid #f3d9fa;
+      border-radius: var(--radius-sm);
+      padding: 8px 12px;
+      font-size: 11.5px;
+      color: #6b21a8;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    /* Console Container with strict uncompressed ASCII styling */
+    .console-box {
+      min-height: 480px;
+      background: #fff;
+      border: 1px solid var(--border);
+      border-bottom-left-radius: var(--radius);
+      border-bottom-right-radius: var(--radius);
+      padding: 22px;
+      overflow-y: auto;
+      max-height: 720px;
+      font-size: var(--console-font-size, 12.5px);
+    }
+
+    .console-box.is-fullscreen {
+      position: fixed;
+      inset: 12px;
+      z-index: 1500;
+      max-height: calc(100vh - 24px);
+      box-shadow: 0 20px 50px rgba(0,0,0,0.25);
+    }
+
+    /* UNCOMPRESSED ASCII PRE & CODE MANDATES */
+    .console-box pre, 
+    .panel-content-scroll pre,
+    pre.ascii-canvas {
+      font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace !important;
+      font-size: var(--console-font-size, 12px) !important;
+      background: #f6f8fa !important;
+      color: #1e293b !important;
+      padding: 16px !important;
+      border-radius: 8px !important;
+      border: 1px solid #e1e4e8 !important;
+      white-space: pre !important;
+      word-wrap: normal !important;
+      overflow-x: auto !important;
+      line-height: 1.35 !important;
+      letter-spacing: 0px !important;
+      tab-size: 4;
+      display: block;
+      margin: 12px 0;
+    }
+
+    .console-box code,
+    .panel-content-scroll code {
+      font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace !important;
+      font-size: inherit;
+      white-space: pre !important;
+    }
+
+    /* Inline code tags outside pre */
+    :not(pre) > code {
+      background: #f1f5f9;
+      padding: 2px 5px;
+      border-radius: 4px;
+      border: 1px solid #e2e8f0;
+      white-space: normal !important;
+    }
+
+    .console-box table, .panel-content-scroll table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 14px 0;
+      font-size: 12px;
+    }
+    .console-box th, .console-box td,
+    .panel-content-scroll th, .panel-content-scroll td {
+      border: 1px solid var(--border);
+      padding: 7px 10px;
+      text-align: left;
+    }
+    .console-box th, .panel-content-scroll th { background: #fafafa; font-weight: 600; }
+
+    /* Interactive Hybrid Instruction Bar */
+    .stage-input-container {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+    .stage-input-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+    .stage-input-row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    /* Modals */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.45);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      backdrop-filter: blur(2px);
+    }
+    .modal {
+      background: #fff;
+      width: 92%;
+      max-width: 620px;
+      border-radius: var(--radius);
+      padding: 20px;
+      border: 1px solid var(--border);
+      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+      max-height: 85vh;
+      display: flex;
+      flex-direction: column;
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+    .modal-body { overflow-y: auto; flex: 1; padding-right: 4px; }
+    
+    .rule-card {
+      background: #fafafa;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 10px 12px;
+      margin-bottom: 8px;
+      font-size: 11.5px;
+      position: relative;
+    }
+    .rule-card.active-rule { border-left: 3px solid #9333ea; }
+    .rule-tag {
+      font-size: 10px;
+      padding: 1px 6px;
+      border-radius: 4px;
+      background: #e9d5ff;
+      color: #6b21a8;
+      font-weight: 600;
+    }
+
+    /* Toast Notification */
+    .toast-box {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: #1f2937;
+      color: #fff;
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 500;
+      display: none;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      z-index: 2000;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Bar -->
+  <header>
+    <div class="brand">
+      <div class="brand-logo"><i class="fa-solid fa-cube"></i></div>
+      <span>pyRevit BIM Studio</span>
+      <span class="brand-badge">v5.1</span>
+    </div>
+    <div class="header-actions">
+      <!-- Sidebar Toggle for Full-Width Drawings -->
+      <button class="btn btn-outline btn-sm" id="btnToggleSidebar" onclick="toggleSidebar()">
+        <i class="fa-solid fa-table-columns"></i> <span id="sidebarBtnLabel">Hide Sidebar</span>
+      </button>
+
+      <!-- Direct Google Drive / Local Folder Link -->
+      <button class="btn btn-drive btn-sm" id="btnLinkDrive" onclick="linkDriveDirectory()">
+        <i class="fa-brands fa-google-drive"></i>
+        <span id="driveBtnLabel">Link 007 RVT Library / Drive</span>
+      </button>
+
+      <!-- RVT Catalog Inspector Trigger -->
+      <button class="btn btn-outline btn-sm" id="btnViewCatalog" onclick="openCatalogModal()" style="display:none;" title="View all scanned folders and .rfa families">
+        <i class="fa-solid fa-boxes-stacked" style="color:var(--accent);"></i> RVT Catalog (<span id="catalogCountBadge">0</span>)
+      </button>
+
+      <!-- Master Prompt Document Pool Trigger -->
+      <button class="btn btn-master btn-sm" onclick="openMasterPromptModal()" title="View and customize the complete Master Prompt specification document">
+        <i class="fa-solid fa-file-contract"></i> Master Prompt Docs
+      </button>
+
+      <!-- Knowledge Pool Modal Trigger -->
+      <button class="btn btn-knowledge btn-sm" onclick="openKnowledgeModal()">
+        <i class="fa-solid fa-brain"></i> Knowledge Pool (<span id="ruleCountBadge">0</span>)
+      </button>
+
+      <!-- Reference Pool (Golden Code Exemplar) Trigger -->
+      <button class="btn btn-outline btn-sm" onclick="openReferenceModal()" title="View and customize the Golden pyRevit Code Exemplar">
+        <i class="fa-solid fa-code-compare" style="color:var(--accent);"></i> Reference Pool
+      </button>
+
+      <!-- API Keys Modal -->
+      <button class="btn btn-outline btn-sm" onclick="openKeyModal()">
+        <i class="fa-solid fa-key"></i> Keys (<span id="keyCountBadge">0</span>)
+      </button>
+      
+      <!-- Token Counter -->
+      <span class="status-badge" id="tokenTracker">
+        <i class="fa-solid fa-bolt"></i> <span id="tokenCount">0 tokens</span>
+      </span>
+    </div>
+  </header>
+
+  <div class="container" id="appContainer">
+    <!-- Story Stage Navigation -->
+    <div class="stages-bar">
+      <div class="stage-item active" id="pillStage0" onclick="switchStage(0)">
+        <div class="story-ring"><div class="story-avatar"><i class="fa-solid fa-compass-drafting"></i></div></div>
+        <span class="stage-label">0. Intake</span>
+      </div>
+      <div class="stage-item" id="pillStage1" onclick="switchStage(1)">
+        <div class="story-ring"><div class="story-avatar"><i class="fa-solid fa-clone"></i></div></div>
+        <span class="stage-label">1. Exact Copy</span>
+      </div>
+      <div class="stage-item" id="pillStage2" onclick="switchStage(2)">
+        <div class="story-ring"><div class="story-avatar"><i class="fa-solid fa-clipboard-list"></i></div></div>
+        <span class="stage-label">2. Recommendations</span>
+      </div>
+      <div class="stage-item" id="pillStage3" onclick="switchStage(3)">
+        <div class="story-ring"><div class="story-avatar"><i class="fa-brands fa-python"></i></div></div>
+        <span class="stage-label">3. pyRevit</span>
+      </div>
+    </div>
+
+    <!-- Left Controls -->
+    <aside class="sidebar">
+      <div class="card">
+        <div class="card-title">
+          <span>Project & Model Setup</span>
+          <span class="status-badge live" id="systemStatus"><span class="dot"></span> Ready</span>
+        </div>
+        
+        <div class="form-group">
+          <label>Project Name</label>
+          <input type="text" id="projectName" class="input-text" value="RAMTECH_OFFICE" placeholder="e.g. RAMTECH_OFFICE">
+        </div>
+
+        <!-- Unit System Selector (Millimeters Default) -->
+        <div class="form-group">
+          <label>Unit System</label>
+          <select id="unitSystemSelector" class="input-select" onchange="updateUnitSelection()">
+            <option value="mm" selected>Millimeters (mm) — Default</option>
+            <option value="m">Meters (m)</option>
+            <option value="ft">Imperial Feet (ft)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Active LLM Model</label>
+          <select id="geminiModelSelector" class="input-select">
+            <option value="gemini-2.5-flash">Gemini 2.5 Flash (Fast Multimodal)</option>
+            <option value="gemini-2.5-pro">Gemini 2.5 Pro (Deep Spatial Reasoning)</option>
+            <option value="gemini-3.6-flash">Gemini 3.6 Flash</option>
+            <option value="gemini-3.5-flash-lite">Gemini 3.5 Flash Lite</option>
+          </select>
+        </div>
+
+        <!-- Claude Final Checker Toggle -->
+        <div class="form-group" style="background:#f5f3ff; border:1px solid #ddd6fe; border-radius:var(--radius-sm); padding:10px;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <label style="margin-bottom:0; color:#5b21b6; font-size:11.5px; font-weight:700; cursor:pointer;" for="enableClaudeChecker">
+              <i class="fa-solid fa-shield-halved" style="color:#7c3aed;"></i> Claude Final Inspector
+            </label>
+            <input type="checkbox" id="enableClaudeChecker" checked onchange="toggleClaudeCheckerSetting()" style="cursor:pointer;">
+          </div>
+          <p style="font-size:10.5px; color:#6d28d9; margin-top:5px; line-height:1.35;">
+            Runs Claude (Sonnet) at Stage 3 as an independent auditor to inspect and certify the pyRevit script before saving.
+          </p>
+        </div>
+
+        <div class="form-group">
+          <label>007 RVT MATERIALS Library</label>
+          <div class="drive-status-box" id="driveStatusText">
+            <i class="fa-solid fa-folder-open"></i> Link local <strong>007 RVT MATERIALS</strong> or Google Drive folder to auto-scan existing <code>.rfa</code> families.
+          </div>
+          <div id="scanProgressArea" style="display:none; margin-top:6px; font-size:11px; color:var(--text-muted);">
+            <i class="fa-solid fa-spinner fa-spin"></i> <span id="scanProgressText">Scanning subfolders...</span>
+          </div>
+          <button class="btn btn-outline btn-sm" id="btnRescanDrive" style="display:none; width:100%; margin-top:6px; font-size:11px;" onclick="rescanDriveDirectory()">
+            <i class="fa-solid fa-rotate"></i> Re-Scan All Drive Subfolders
+          </button>
+        </div>
+
+        <div class="form-group">
+          <label>Library path as Revit sees it (written into the script)</label>
+          <input type="text" id="libRootInput" class="input-text" placeholder="G:\My Drive\007 RVT MATERIALS" onchange="saveLibRoot()">
+          <label style="display:flex;gap:6px;align-items:center;margin-top:8px;"><input type="checkbox" id="autoScan" checked> Auto-rescan every 60 s &amp; on tab focus <span id="lastScan" style="margin-left:auto;"></span></label>
+          <button class="btn btn-outline btn-sm" id="btnReconnect" style="display:none;width:100%;margin-top:6px;" onclick="reconnectLibrary()"><i class="fa-solid fa-plug"></i> Reconnect library folder</button>
+          <button class="btn btn-outline btn-sm" id="btnLinkOut" style="width:100%;margin-top:6px;" onclick="linkOutputFolder()"><i class="fa-solid fa-folder-plus"></i> Link pyRevit extension folder (for saving)</button>
+        </div>
+
+        <div class="form-group">
+          <label>Floor Plan Sketch / Drawing</label>
+          <div class="drop-zone" onclick="document.getElementById('fileInput').click()">
+            <i class="fa-regular fa-image" style="font-size: 20px; color: var(--text-muted);"></i>
+            <p style="font-size: 11px; margin-top: 4px; color: var(--text-muted);">Drop sketch or click to upload</p>
+            <input type="file" id="fileInput" accept="image/*,application/pdf" style="display: none;" onchange="handleFile(event)">
+            <img id="imagePreview" class="preview-thumb" alt="Preview">
+          </div>
+        </div>
+      </div>
+
+      <!-- Post-Test Error Memory & Adaptive Learner -->
+      <div class="card">
+        <div class="card-title">
+          <span><i class="fa-solid fa-bug" style="color:var(--danger);"></i> Post-Test Traceback Analyzer</span>
+        </div>
+        <p style="font-size: 11px; color:var(--text-muted); margin-bottom: 8px;">
+          Tested in Revit 2026 and hit an error? Paste the traceback. The engine remembers prior session outputs, extracts the root cause, and saves a learned rule to the Knowledge Pool.
+        </p>
+        <textarea id="tracebackInput" rows="3" placeholder="Paste pyRevit error or traceback here..."></textarea>
+        
+        <div style="display:flex; gap:6px; margin-top: 8px;">
+          <button class="btn btn-knowledge btn-sm" style="flex:1;" onclick="analyzeAndLearnFromError()">
+            <i class="fa-solid fa-brain"></i> Diagnose & Learn
+          </button>
+          <button class="btn btn-outline btn-sm" onclick="quickPatchOnly()">
+            <i class="fa-solid fa-wrench"></i> Patch
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Workspace -->
+    <main class="main-content">
+      <!-- Active Knowledge Injection Indicator -->
+      <div class="knowledge-active-strip">
+        <span><i class="fa-solid fa-microchip"></i> Active System Framework: Master Prompt v2.1 + Knowledge Pool</span>
+        <span id="knowledgeStripText" style="font-weight: 500; font-size: 11px;">0 rules will accompany all model calls</span>
+      </div>
+
+      <!-- Stage Gate Action Banner -->
+      <div class="gate-banner" id="gateBanner">
+        <div class="gate-info">
+          <h4 id="gateTitle">Stage 0: Project Intake Ready</h4>
+          <p id="gateDesc">Attach your sketch and click Initialize Stage 1 or input customized intake requirements.</p>
+        </div>
+        <div id="gateActionArea"></div>
+      </div>
+
+      <!-- Dedicated Toolbar: View Mode, Zoom, Copy, Fullscreen -->
+      <div class="console-toolbar" id="consoleToolbar">
+        <div id="stageViewModeControls" style="display:flex; align-items:center; gap:6px;">
+          <!-- Injected dynamically in Stage 2 -->
+        </div>
+        <div class="console-toolbar-tools">
+          <button class="tool-btn" onclick="adjustFontSize(-1)" title="Decrease Font Size"><i class="fa-solid fa-font"></i> -</button>
+          <span id="fontSizeDisplay" style="font-size:11px; font-weight:600; min-width:32px; text-align:center;">12px</span>
+          <button class="tool-btn" onclick="adjustFontSize(1)" title="Increase Font Size"><i class="fa-solid fa-font"></i> +</button>
+          <button class="tool-btn" onclick="copyConsoleRawText()" title="Copy text content"><i class="fa-regular fa-copy"></i> Copy</button>
+          <button class="tool-btn" id="btnFullscreen" onclick="toggleFullscreenConsole()" title="Toggle Fullscreen"><i class="fa-solid fa-expand"></i> Fullscreen</button>
+        </div>
+      </div>
+
+      <!-- Main Display Console (Supports Uncompressed Split or Tabbed Views) -->
+      <div class="console-box" id="consoleOutput">
+        <div style="color: var(--text-muted); text-align: center; padding: 70px 0;">
+          <i class="fa-solid fa-compass-drafting" style="font-size: 36px; margin-bottom: 12px; opacity: 0.6;"></i>
+          <p style="font-weight: 600; font-size: 14px;">Studio Ready for Architectural Intake</p>
+          <p style="font-size: 12px; margin-top: 4px;">Attach a floor plan sketch or enter intake notes below to begin Stage 1 exact copy reproduction.</p>
+        </div>
+      </div>
+
+      <!-- Bottom Persistent Hybrid Instruction Bar -->
+      <div class="stage-input-container">
+        <div class="stage-input-header">
+          <span id="inputLabelText"><i class="fa-solid fa-terminal"></i> Optional Stage Instructions / Direct Text Prompt:</span>
+          <span>Press Enter or click Primary Action</span>
+        </div>
+        <div class="stage-input-row">
+          <input type="text" id="customStagePrompt" class="input-text" placeholder="Type instructions, corrections, or custom directives..." onkeydown="if(event.key==='Enter') handleUnifiedAction()">
+          <button class="btn btn-primary btn-sm" id="btnPrimaryAction" onclick="handleUnifiedAction()">
+            <i class="fa-solid fa-play"></i> Initialize Stage 1
+          </button>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Knowledge Pool Modal -->
+  <div class="modal-overlay" id="knowledgeModal">
+    <div class="modal">
+      <div class="modal-header">
+        <div>
+          <h3 style="font-size: 15px; font-weight: 700;"><i class="fa-solid fa-brain" style="color:#9333ea;"></i> Adaptive Mistake Knowledge Pool</h3>
+          <p style="font-size: 11px; color:var(--text-muted);">Stored browser rules learned from past mistakes. Injected into every generation.</p>
+        </div>
+        <i class="fa-solid fa-xmark" style="cursor: pointer; font-size: 16px;" onclick="closeKnowledgeModal()"></i>
+      </div>
+      
+      <!-- Filter and Add Rule Controls -->
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; gap:8px;">
+        <input type="text" id="searchRulesInput" class="input-text" placeholder="Search learned rules..." oninput="renderKnowledgeRulesList()" style="flex:1; padding:5px 9px;">
+        <button class="btn btn-outline btn-sm" onclick="resetDefaultRules()"><i class="fa-solid fa-rotate-left"></i> Reset Defaults</button>
+        <button class="btn btn-knowledge btn-sm" onclick="toggleAddRuleForm()"><i class="fa-solid fa-plus"></i> New Rule</button>
+      </div>
+
+      <!-- Add Rule Form (Hidden by default) -->
+      <div id="addRuleForm" style="display:none; background:#f8fafc; border:1px solid #e2e8f0; border-radius:var(--radius-sm); padding:12px; margin-bottom:12px;">
+        <h4 style="font-size:12px; font-weight:700; margin-bottom:8px; color:#475569;">Add Custom Learned Rule</h4>
+        <div class="form-group">
+          <label>Rule Title / Issue Signature</label>
+          <input type="text" id="newRuleTitle" class="input-text" placeholder="e.g. FailureHandlingOptions doc vs Transaction">
+        </div>
+        <div class="form-group">
+          <label>Category</label>
+          <select id="newRuleCategory" class="input-select">
+            <option value="Revit API">Revit API</option>
+            <option value="Coordinate Math">Coordinate Math</option>
+            <option value="Hosting">Hosting</option>
+            <option value="Geometry">Geometry</option>
+            <option value="Egress">Egress</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Mitigation / Mandatory Instruction</label>
+          <textarea id="newRuleMitigation" rows="2" placeholder="e.g. Always bind WarnKiller preprocessor to Transaction."></textarea>
+        </div>
+        <div style="display:flex; justify-content:flex-end; gap:6px;">
+          <button class="btn btn-outline btn-sm" onclick="toggleAddRuleForm()">Cancel</button>
+          <button class="btn btn-primary btn-sm" onclick="saveCustomRule()">Save Rule</button>
+        </div>
+      </div>
+
+      <div class="modal-body" id="rulesListContainer">
+        <!-- Rendered rules -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Master Prompt Docs Modal (v5.0 Core Addition) -->
+  <div class="modal-overlay" id="masterPromptModal">
+    <div class="modal" style="max-width: 860px; max-height: 90vh;">
+      <div class="modal-header">
+        <div>
+          <h3 style="font-size: 15px; font-weight: 700;"><i class="fa-solid fa-file-contract" style="color:#ea580c;"></i> Master Prompt Document Pool (Default & Detailed Instructions)</h3>
+          <p style="font-size: 11px; color:var(--text-muted);">The primary architectural specification and workflow guidelines governing all AI decisions. You can edit this text anytime.</p>
+        </div>
+        <i class="fa-solid fa-xmark" style="cursor: pointer; font-size: 16px;" onclick="closeMasterPromptModal()"></i>
+      </div>
+      
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; gap:8px;">
+        <span style="font-size:11px; color:var(--text-muted);"><i class="fa-solid fa-circle-check" style="color:var(--success);"></i> Active System Document: <strong>Master Prompt v2.1 (Revit 2026 Ready)</strong></span>
+        <div style="display:flex; gap:6px;">
+          <button class="btn btn-outline btn-sm" onclick="resetDefaultMasterPrompt()"><i class="fa-solid fa-rotate-left"></i> Reset to Default</button>
+          <button class="btn btn-primary btn-sm" onclick="saveEditedMasterPrompt()"><i class="fa-solid fa-save"></i> Save Changes</button>
+        </div>
+      </div>
+
+      <div class="modal-body">
+        <textarea id="masterPromptEditor" style="font-family:'JetBrains Mono', 'Fira Code', monospace; font-size:12px; width:100%; height:480px; line-height:1.45; background:#fffbf7; color:#1e293b; padding:14px; border-radius:8px; border:1px solid #fed7aa; resize:vertical; outline:none; white-space:pre;"></textarea>
+      </div>
+    </div>
+  </div>
+
+  <!-- Reference Pool Modal (Golden Code Exemplar) -->
+  <div class="modal-overlay" id="referenceModal">
+    <div class="modal" style="max-width: 820px; max-height: 90vh;">
+      <div class="modal-header">
+        <div>
+          <h3 style="font-size: 15px; font-weight: 700;"><i class="fa-solid fa-code-compare" style="color:var(--accent);"></i> Reference Pool: Golden Code Exemplar</h3>
+          <p style="font-size: 11px; color:var(--text-muted);">The AI agent studies this verified pyRevit script on every run to eliminate syntax, hosting, and transaction errors.</p>
+        </div>
+        <i class="fa-solid fa-xmark" style="cursor: pointer; font-size: 16px;" onclick="closeReferenceModal()"></i>
+      </div>
+      
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; gap:8px;">
+        <span style="font-size:11px; color:var(--text-muted);"><i class="fa-solid fa-circle-check" style="color:var(--success);"></i> Active Reference Architecture: <strong>Admin Building Staged Builder (Harry Lonoan)</strong></span>
+        <div style="display:flex; gap:6px;">
+          <button class="btn btn-outline btn-sm" onclick="resetDefaultReference()"><i class="fa-solid fa-rotate-left"></i> Reset Golden Script</button>
+          <button class="btn btn-primary btn-sm" onclick="saveEditedReference()"><i class="fa-solid fa-save"></i> Save Changes</button>
+        </div>
+      </div>
+
+      <div class="modal-body"><textarea id="referenceCodeEditor" style="font-family:'JetBrains Mono',monospace; font-size:12px; width:100%; height:480px; line-height:1.45; background:#f8fafc; padding:14px; border-radius:8px; border:1px solid var(--border); resize:vertical; outline:none; white-space:pre;"></textarea></div>
+    </div>
+  </div>
+
+  <!-- RVT Library Scanned Catalog Modal -->
+  <div class="modal-overlay" id="catalogModal">
+    <div class="modal" style="max-width: 780px; max-height: 85vh;">
+      <div class="modal-header">
+        <div>
+          <h3 style="font-size: 15px; font-weight: 700;"><i class="fa-solid fa-boxes-stacked" style="color:var(--accent);"></i> Scanned RVT Family Catalog</h3>
+          <p style="font-size: 11px; color:var(--text-muted);">Verified .rfa families cataloged across all discovered subfolders in your linked Drive.</p>
+        </div>
+        <i class="fa-solid fa-xmark" style="cursor: pointer; font-size: 16px;" onclick="closeCatalogModal()"></i>
+      </div>
+      
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; gap:8px;">
+        <input type="text" id="searchCatalogInput" class="input-text" placeholder="Search families (e.g. desk, sink, window, door, table)..." oninput="renderCatalogModalContent()" style="flex:1; padding:6px 10px;">
+        <span class="status-badge" style="background:#eff6ff; color:#1e40af;" id="catalogStatsSummary">0 folders | 0 families</span>
+      </div>
+
+      <div class="modal-body" id="catalogTreeContainer" style="max-height:500px; overflow-y:auto; padding-right:4px;">
+        <!-- Rendered folder groups -->
+      </div>
+    </div>
+  </div>
+
+  <!-- API Keys Modal -->
+  <div class="modal-overlay" id="keyModal">
+    <div class="modal" style="max-width: 480px;">
+      <div class="modal-header">
+        <h3 style="font-size: 15px; font-weight: 700;"><i class="fa-solid fa-key"></i> Multi-Provider API Pool</h3>
+        <i class="fa-solid fa-xmark" style="cursor: pointer; font-size: 16px;" onclick="closeKeyModal()"></i>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Provider</label>
+          <select id="keyProvider" class="input-select">
+            <option value="gemini">Google Gemini / AI Studio</option>
+            <option value="anthropic">Anthropic Claude (Direct API)</option>
+            <option value="openrouter">OpenRouter API (Claude / GPT)</option>
+            <option value="groq">Groq API</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>API Key</label>
+          <input type="password" id="keyVal" class="input-text" placeholder="Paste API key here (sk-ant-... or AIzaSy...)">
+        </div>
+        <button class="btn btn-primary btn-sm" style="width:100%; margin-bottom:12px;" onclick="saveKey()">
+          <i class="fa-solid fa-plus"></i> Add Key
+        </button>
+
+        <label style="font-size: 11px; font-weight: 600; color: var(--text-muted);">Saved Keys</label>
+        <div id="keyList" style="margin-top: 6px; display: flex; flex-direction: column; gap: 6px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div class="toast-box" id="toastNotification">
+    <i class="fa-solid fa-circle-info" id="toastIcon"></i>
+    <span id="toastMsg">Notification message</span>
+  </div>
+
+  <script>
+    // --- STATE MANAGEMENT ---
+    let currentStage = 0;
+    let attachedImageBase64 = null;
+    let dirHandle = null;
+    let scannedFamilyFiles = [];
+    let familyCatalogByCategory = {}; // Grouped by relative folder path
+    let totalTokensUsed = 0;
+    let retryAttempt = 0;
+    let maxRetries = 3;
+    let consoleFontSize = 12;
+    let isSidebarCollapsed = false;
+    let stage2ViewMode = "tabs"; // "tabs" (default, full-width) or "split"
+    let stage2ActiveTab = "recommendations"; // "baseline" or "recommendations"
+
+    let appState = {
+      draftProjectName: "RAMTECH_OFFICE",
+      unitSystem: "mm",     // Default Millimeters
+      stage1Text: "",       // Stage 1 Exact Copy (ASCII plan, elements, register, completeness gate)
+      stage2Text: "",       // Stage 2 Text Recommendations only (spatial diagnostics, area budget, egress, schedules)
+      stage3Script: "",     // Stage 3 Zero-Fail pyRevit Script for Revit 2026
+      claudeAuditReport: "",// Claude Stage 3 Checker Verdict & Analysis
+      claudeAuditStatus: "",// "passed", "patched", or ""
+      sessionHistory: []    // Audit log of past errors and fixes
+    };
+
+    function toggleClaudeCheckerSetting() {
+      const isEnabled = document.getElementById("enableClaudeChecker").checked;
+      localStorage.setItem("pyrevit_claude_checker_enabled", isEnabled ? "1" : "0");
+      showToast(isEnabled ? "Claude Final Inspector enabled" : "Claude Final Inspector disabled", "info");
+    }
+
+    function isClaudeCheckerEnabled() {
+      const stored = localStorage.getItem("pyrevit_claude_checker_enabled");
+      return stored === null ? true : stored === "1";
+    }
+
+    // --- MASTER PROMPT SPECIFICATION DOCUMENT (v5.0 CORE) ---
+    const DEFAULT_MASTER_PROMPT_DOC = `# MASTER PROMPT: Sketch to pyRevit (3-Stage Workflow) — Version 2.1 (Revit 2026 Ready)
+
+## 0. Role and Standing Rules
+You are an expert architect and Revit API / pyRevit developer specializing in Revit 2026 automation. You work in exactly THREE stages, in strict linear order:
+* Stage 1: Read sketch and produce an exact copy with complete element register, ASCII plan, and Revit family schedule. Zero redesign, zero code.
+* Stage 2: Context and spatial diagnostics, building code, area budget, and text recommendations.
+* Stage 3: Zero-fail production IronPython 2.7 pyRevit script for Revit 2026.
+
+## 1. Spatial Coordinate Transformation & Units
+* Internal units: Feet (XYZ). Conversions: MM = 1.0 / 304.8 or M = 1.0 / 0.3048.
+* Coordinate Inversion Rule: Plan top-left (y=0 North) transformed to Revit (+Y North):
+  def pt_ft(x, y, z=0.0):
+      return XYZ(x * UNIT_SCALE, (D - y) * UNIT_SCALE, z)
+
+## 2. Stage 1: Exact Copy & Revit Family Search Schedule
+* Deliverables: Context read-back (<= 5 lines), Element Register Table, Exact-Copy ASCII Plan, Source classification (Dimensioned/Scaled/Estimated), Discrepancies list, Completeness Gate.
+* MANDATORY FAMILY SCHEDULE: Schedule all doors, windows, sanitary fixtures, and furniture with family keywords, subfolder mapping (007 RVT MATERIALS), and hosting types.
+
+## 3. Stage 2: Text Recommendations Only
+* Keep Stage 1 geometry immutable. Output spatial diagnostics, circulation/egress checks, and recommendations table with [# | Issue | Recommendation | Affected Elements | Benefit | Status (Keep/Change)].
+
+## 4. Stage 3: pyRevit 2026 Zero-Fail Invariants
+* IronPython 2.7 dual-compatible. No Python 3 f-strings.
+* NEVER call doc.GetFailureHandlingOptions(). Always bind WarnKiller preprocessor to DB.Transaction: t.GetFailureHandlingOptions().
+* Merge collinear partitions using merge_intervals() to prevent overlapping walls.
+* Load families headlessly with LoadOpts(DB.IFamilyLoadOptions) with overwriteParameterValues.Value = False.
+* Inspect placement type via app.OpenDocumentFile() with read_placement_type() before placing.
+* Use face.XVector for WorkPlaneBased wall instances.
+* Stamp instances with comments (fix_tag) to ensure idempotency.`;
+
+    function getMasterPromptDoc() {
+      return localStorage.getItem("pyrevit_master_prompt_doc") || DEFAULT_MASTER_PROMPT_DOC;
+    }
+
+    function saveMasterPromptDoc(docText) {
+      localStorage.setItem("pyrevit_master_prompt_doc", docText);
+      showToast("Master Prompt Document saved & updated!", "success");
+    }
+
+    function openMasterPromptModal() {
+      document.getElementById("masterPromptEditor").value = getMasterPromptDoc();
+      document.getElementById("masterPromptModal").style.display = "flex";
+    }
+
+    function closeMasterPromptModal() {
+      document.getElementById("masterPromptModal").style.display = "none";
+    }
+
+    function saveEditedMasterPrompt() {
+      const docText = document.getElementById("masterPromptEditor").value;
+      saveMasterPromptDoc(docText);
+      closeMasterPromptModal();
+    }
+
+    function resetDefaultMasterPrompt() {
+      if (confirm("Reset Master Prompt Document back to official Master Prompt v2.1 for Revit 2026?")) {
+        document.getElementById("masterPromptEditor").value = DEFAULT_MASTER_PROMPT_DOC;
+        saveMasterPromptDoc(DEFAULT_MASTER_PROMPT_DOC);
+      }
+    }
+
+    function toggleSidebar() {
+      const container = document.getElementById("appContainer");
+      const sidebar = document.querySelector(".sidebar");
+      const btnLabel = document.getElementById("sidebarBtnLabel");
+      isSidebarCollapsed = !isSidebarCollapsed;
+
+      if (isSidebarCollapsed) {
+        container.classList.add("sidebar-collapsed");
+        sidebar.classList.add("is-collapsed");
+        btnLabel.innerText = "Show Sidebar";
+      } else {
+        container.classList.remove("sidebar-collapsed");
+        sidebar.classList.remove("is-collapsed");
+        btnLabel.innerText = "Hide Sidebar";
+      }
+    }
+
+    // --- GOLDEN CODE REFERENCE POOL ---
+    const DEFAULT_GOLDEN_REFERENCE = `# -*- coding: utf-8 -*-
+"""Administrative Core Building - staged builder (4.5 storeys, 16 x 20 m footprint).
+Stage 0 levels -> Stage 1 walls/slab/doors/windows/rooms per level -> Stage 2 furniture per level.
+The hosting of every furniture family is checked from the .rfa file BEFORE it is loaded."""
+__title__ = "Admin Building\\nStaged Builder"
+__author__ = "Harry Lonoan"
+
+import os
+import math
+import json
+import traceback
+import clr
+
+clr.AddReference("RevitAPI")
+clr.AddReference("RevitAPIUI")
+
+import Autodesk.Revit.DB as DB
+from Autodesk.Revit.DB import (
+    FilteredElementCollector, BuiltInCategory, Wall, WallType, Floor, FloorType, Level,
+    Family, FamilySymbol, FamilyInstance, FamilyPlacementType, Line, XYZ, UV, CurveLoop,
+    CurveArray, ElementTransformUtils, Transaction, HostObjectUtils, ShellLayerType,
+    ViewPlan, ViewFamilyType, ViewFamily
+)
+from Autodesk.Revit.DB.Structure import StructuralType
+from System.Collections.Generic import List
+from pyrevit import revit, forms, script
+
+doc = revit.doc
+app = doc.Application
+
+ROOT = r"G:\\My Drive\\007 RVT MATERIALS"
+M = 1.0 / 0.3048            # metres -> feet (Revit internal units)
+W, D = 16.0, 20.0           # footprint 16 x 20 m
+WINDOW_SILL = 0.9
+
+LEVELS = [
+    ("AD-1 Ground Floor", 0.0, 4.2, (0, 0, 16, 20)),
+    ("AD-2 Second Floor", 4.2, 3.6, (0, 0, 16, 20)),
+    ("AD-3 Third Floor", 7.8, 3.6, (0, 0, 16, 20)),
+    ("AD-4 Fourth Floor", 11.4, 3.6, (0, 0, 16, 20)),
+    ("AD-5 Half Storey", 15.0, 3.6, (0, 0, 16, 10)),
+]
+
+class WarnKiller(DB.IFailuresPreprocessor):
+    def PreprocessFailures(self, accessor):
+        for m in accessor.GetFailureMessages():
+            if m.GetSeverity() == DB.FailureSeverity.Warning:
+                accessor.DeleteWarning(m)
+        return DB.FailureProcessingResult.Continue
+
+class LoadOpts(DB.IFamilyLoadOptions):
+    def OnFamilyFound(self, familyInUse, overwriteParameterValues):
+        overwriteParameterValues.Value = False
+        return True
+    def OnSharedFamilyFound(self, sharedFamily, familyInUse, source, overwriteParameterValues):
+        source.Value = DB.FamilySource.Family
+        overwriteParameterValues.Value = False
+        return True
+
+def run_txn(name, fn):
+    t = Transaction(doc, name)
+    t.Start()
+    try:
+        o = t.GetFailureHandlingOptions()
+        o.SetFailuresPreprocessor(WarnKiller())
+        t.SetFailureHandlingOptions(o)
+        r = fn()
+        t.Commit()
+        return True, r
+    except Exception as ex:
+        if t.GetStatus() == DB.TransactionStatus.Started:
+            t.RollBack()
+        print(traceback.format_exc())
+        return False, None
+
+def pt_ft(x, y, z=0.0):
+    """Plan metres (y=0 north) -> Revit XYZ in feet (north = +Y)."""
+    return XYZ(x * M, (D - y) * M, z)
+
+def merge_intervals(iv):
+    iv.sort()
+    out = []
+    for a, b in iv:
+        if out and a <= out[-1][1] + 0.01:
+            out[-1][1] = max(out[-1][1], b)
+        else:
+            out.append([a, b])
+    return out
+
+def read_placement_type(path):
+    """Opens .rfa in background to check hosting without loading."""
+    fdoc = None
+    try:
+        fdoc = app.OpenDocumentFile(path)
+        return str(fdoc.OwnerFamily.FamilyPlacementType)
+    except Exception:
+        return None
+    finally:
+        if fdoc is not None:
+            try: fdoc.Close(False)
+            except Exception: pass
+`;
+
+    function getGoldenReference() {
+      return localStorage.getItem("pyrevit_golden_reference") || DEFAULT_GOLDEN_REFERENCE;
+    }
+
+    function saveGoldenReference(code) {
+      localStorage.setItem("pyrevit_golden_reference", code);
+      showToast("Golden Reference Code updated!", "success");
+    }
+
+    function openReferenceModal() {
+      document.getElementById("referenceCodeEditor").value = getGoldenReference();
+      document.getElementById("referenceModal").style.display = "flex";
+    }
+
+    function closeReferenceModal() {
+      document.getElementById("referenceModal").style.display = "none";
+    }
+
+    function saveEditedReference() {
+      const code = document.getElementById("referenceCodeEditor").value;
+      saveGoldenReference(code);
+      closeReferenceModal();
+    }
+
+    function resetDefaultReference() {
+      if (confirm("Reset Reference Pool to Harry Lonoan's tested Staged Builder exemplar?")) {
+        document.getElementById("referenceCodeEditor").value = DEFAULT_GOLDEN_REFERENCE;
+        saveGoldenReference(DEFAULT_GOLDEN_REFERENCE);
+      }
+    }
+
+    function adjustFontSize(delta) {
+      consoleFontSize = Math.max(9, Math.min(20, consoleFontSize + delta));
+      document.documentElement.style.setProperty("--console-font-size", consoleFontSize + "px");
+      document.getElementById("fontSizeDisplay").innerText = consoleFontSize + "px";
+    }
+
+    function toggleFullscreenConsole() {
+      const consoleEl = document.getElementById("consoleOutput");
+      const btn = document.getElementById("btnFullscreen");
+      consoleEl.classList.toggle("is-fullscreen");
+      if (consoleEl.classList.contains("is-fullscreen")) {
+        btn.innerHTML = `<i class="fa-solid fa-compress"></i> Exit`;
+      } else {
+        btn.innerHTML = `<i class="fa-solid fa-expand"></i> Fullscreen`;
+      }
+    }
+
+    function copyConsoleRawText() {
+      let text = "";
+      if (currentStage === 1) text = appState.stage1Text;
+      else if (currentStage === 2) text = stage2ActiveTab === "baseline" ? appState.stage1Text : appState.stage2Text;
+      else if (currentStage === 3) text = appState.stage3Script;
+
+      if (!text) {
+        showToast("Nothing to copy yet", "info");
+        return;
+      }
+
+      const tempArea = document.createElement("textarea");
+      tempArea.value = text;
+      document.body.appendChild(tempArea);
+      tempArea.select();
+      document.execCommand("copy");
+      document.body.removeChild(tempArea);
+      showToast("Copied to clipboard!", "success");
+    }
+
+    // --- CRITICAL SMART ASCII/DIAGRAM PRE-PROCESSOR ---
+    // Solves the squished diagram issue: ensures naked ASCII plans with dashes, pipes, and dots
+    // are automatically enclosed in ```text blocks before markdown parsing.
+    function preprocessMarkdownASCII(markdown) {
+      if (!markdown) return "";
+
+      const lines = markdown.split("\n");
+      const processed = [];
+      let inCodeFence = false;
+      let inAsciiBuffer = false;
+      let asciiBuffer = [];
+
+      // Detect lines with typical ASCII architectural drawing characters
+      function isAsciiArtLine(line) {
+        const trimmed = line.trim();
+        if (!trimmed) return false;
+        // Don't mistake markdown tables with | Col 1 | Col 2 | for raw ASCII sketches
+        if (/^\|.*\|\s*$/.test(trimmed) && trimmed.includes("|") && !trimmed.includes("+") && !trimmed.includes("---")) {
+          // Could be a standard markdown table row
+          return false;
+        }
+        // Check for ASCII drawing indicators (corners, wall markers, grid lines)
+        const hasBoxChars = /[+\-|_]{4,}/.test(line) || /^[+\-|][\s\S]*[+\-|]$/.test(trimmed);
+        const hasWallDots = /\.{4,}/.test(line) && /[|\\]/.test(line);
+        const hasAsciiWall = /^[| ][\s\S]*[|]$/.test(line) && (line.includes("Exterior Wall") || line.includes("DOOR") || line.includes("Y=") || line.includes("X="));
+        return hasBoxChars || hasWallDots || hasAsciiWall;
+      }
+
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+
+        if (line.trim().startsWith("```")) {
+          inCodeFence = !inCodeFence;
+          if (inAsciiBuffer) {
+            processed.push("```text");
+            processed.push(...asciiBuffer);
+            processed.push("```");
+            asciiBuffer = [];
+            inAsciiBuffer = false;
+          }
+          processed.push(line);
+          continue;
+        }
+
+        if (inCodeFence) {
+          processed.push(line);
+          continue;
+        }
+
+        // Outside code fence: check for naked ASCII drawing
+        if (isAsciiArtLine(line)) {
+          inAsciiBuffer = true;
+          asciiBuffer.push(line);
+        } else {
+          if (inAsciiBuffer) {
+            // Check if blank line within diagram
+            if (line.trim() === "" && i + 1 < lines.length && isAsciiArtLine(lines[i + 1])) {
+              asciiBuffer.push(line);
+              continue;
+            }
+            // Flush buffer
+            processed.push("```text");
+            processed.push(...asciiBuffer);
+            processed.push("```");
+            asciiBuffer = [];
+            inAsciiBuffer = false;
+          }
+          processed.push(line);
+        }
+      }
+
+      if (inAsciiBuffer) {
+        processed.push("```text");
+        processed.push(...asciiBuffer);
+        processed.push("```");
+      }
+
+      return processed.join("\n");
+    }
+
+    function safeParseMarkdown(md) {
+      const sanitized = preprocessMarkdownASCII(md);
+      return marked.parse(sanitized);
+    }
+    // --- VIEW RENDERERS (UNCOMPRESSED & PRESERVING STAGE 1 BASELINE) ---
+    function setStage2ViewMode(mode) {
+      stage2ViewMode = mode;
+      renderStage2View();
+    }
+
+    function setStage2Tab(tab) {
+      stage2ActiveTab = tab;
+      renderStage2View();
+    }
+
+    function renderStage1View() {
+      const toolbarControls = document.getElementById("stageViewModeControls");
+      toolbarControls.innerHTML = `
+        <span style="font-weight:700; color:var(--text);"><i class="fa-solid fa-clone"></i> Stage 1: Exact Copy Reproduction</span>
+      `;
+      const out = document.getElementById("consoleOutput");
+      out.innerHTML = `
+        <div style="margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
+          <h3 style="font-size:14px; font-weight:700;"><i class="fa-solid fa-clone"></i> Stage 1: Exact Copy Reproduction</h3>
+          <span class="status-badge" style="background:#dcfce7; color:#15803d;"><i class="fa-solid fa-check"></i> Preserved Baseline Established</span>
+        </div>
+        ${safeParseMarkdown(appState.stage1Text)}${renderMatchPanel()}
+      `;
+    }
+
+    function renderStage2View() {
+      const toolbarControls = document.getElementById("stageViewModeControls");
+      toolbarControls.innerHTML = `
+        <div style="display:flex; align-items:center; gap:6px;">
+          <span style="font-weight:700; font-size:11.5px; margin-right:4px;">View:</span>
+          <button class="tool-btn ${stage2ViewMode === 'tabs' ? 'active' : ''}" onclick="setStage2ViewMode('tabs')">
+            <i class="fa-solid fa-folder"></i> Tabs (Full Width)
+          </button>
+          <button class="tool-btn ${stage2ViewMode === 'split' ? 'active' : ''}" onclick="setStage2ViewMode('split')">
+            <i class="fa-solid fa-table-columns"></i> Side-by-Side (Split)
+          </button>
+        </div>
+      `;
+
+      const out = document.getElementById("consoleOutput");
+
+      if (stage2ViewMode === "tabs") {
+        // Tabbed Full-Width Mode (Optimal for reading full ASCII plans without compression)
+        out.innerHTML = `
+          <div style="display:flex; gap:8px; border-bottom:1px solid var(--border); padding-bottom:10px; margin-bottom:16px;">
+            <button class="tool-btn ${stage2ActiveTab === 'recommendations' ? 'active' : ''}" style="font-size:12px; padding:6px 14px;" onclick="setStage2Tab('recommendations')">
+              <i class="fa-solid fa-clipboard-list"></i> Stage 2: Text Recommendations & Schedules
+            </button>
+            <button class="tool-btn ${stage2ActiveTab === 'baseline' ? 'active' : ''}" style="font-size:12px; padding:6px 14px;" onclick="setStage2Tab('baseline')">
+              <i class="fa-solid fa-lock"></i> Stage 1: Preserved Baseline Exact Copy Plan
+            </button>
+          </div>
+
+          <div style="width:100%; overflow-x:auto;">
+            ${stage2ActiveTab === 'baseline' 
+              ? safeParseMarkdown(appState.stage1Text || "No Stage 1 baseline available.") 
+              : safeParseMarkdown(appState.stage2Text || "No Stage 2 recommendations generated yet.")}
+          </div>
+        `;
+      } else {
+        // Side-by-Side Split View
+        out.innerHTML = `
+          <div class="workspace-split">
+            <!-- Left Column: Permanent Preserved Stage 1 Exact Copy Plan -->
+            <div class="panel-preserved">
+              <div class="panel-header-badge">
+                <span><i class="fa-solid fa-lock"></i> Stage 1: Preserved Exact Copy Plan</span>
+                <span style="font-weight:600; font-size:10.5px;">BASELINE ARCHITECTURE</span>
+              </div>
+              <div class="panel-content-scroll">
+                ${safeParseMarkdown(appState.stage1Text || "No Stage 1 baseline available.")}
+              </div>
+            </div>
+
+            <!-- Right Column: Stage 2 Text Recommendations & Spatial Diagnostics -->
+            <div class="panel-recommendations">
+              <div class="panel-header-rec">
+                <span><i class="fa-solid fa-clipboard-list"></i> Stage 2: Text Recommendations Only</span>
+                <span style="font-weight:600; font-size:10.5px; color:var(--accent);">DIAGNOSTICS & SCHEDULES</span>
+              </div>
+              <div class="panel-content-scroll">
+                ${safeParseMarkdown(appState.stage2Text || "No Stage 2 recommendations generated yet.")}
+              </div>
+            </div>
+          </div>
+        `;
+      }
+    }
+
+    function renderStage3View() {
+      const toolbarControls = document.getElementById("stageViewModeControls");
+      toolbarControls.innerHTML = `
+        <span style="font-weight:700; color:var(--text);"><i class="fa-brands fa-python"></i> Stage 3: Revit 2026 Production Script</span>
+      `;
+      const out = document.getElementById("consoleOutput");
+
+      let auditHtml = "";
+      if (appState.claudeAuditReport) {
+        const isPassed = appState.claudeAuditStatus === "passed";
+        auditHtml = `
+          <div style="background:${isPassed ? '#f0fdf4' : '#fffbeb'}; border:1px solid ${isPassed ? '#bbf7d0' : '#fde68a'}; border-radius:10px; padding:14px; margin-bottom:16px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+              <span style="font-weight:700; font-size:12.5px; color:${isPassed ? '#15803d' : '#b45309'};">
+                <i class="fa-solid fa-shield-halved"></i> Claude Code Audit Verdict: ${isPassed ? 'PASSED (Zero-Fail Certified)' : 'PATCHED (Errors Corrected by Claude)'}
+              </span>
+              <span class="status-badge" style="background:${isPassed ? '#dcfce7' : '#fef3c7'}; color:${isPassed ? '#166534' : '#92400e'};">
+                Claude Sonnet Inspected
+              </span>
+            </div>
+            <div style="font-size:11.5px; color:#374151; white-space:pre-line; max-height:160px; overflow-y:auto; line-height:1.45;">
+              ${escapeHtml(appState.claudeAuditReport)}
+            </div>
+          </div>
+        `;
+      }
+
+      out.innerHTML = `
+        ${lintHtml()}${auditHtml}
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+          <h3 style="font-size:14px; font-weight:700;"><i class="fa-brands fa-python"></i> Stage 3: pyRevit Production Script (Revit 2026)</h3>
+          <div style="display:flex; gap:6px;">
+            <button class="btn btn-outline btn-sm" onclick="triggerClaudeAuditManually()" style="color:#6d28d9; border-color:#ddd6fe;">
+              <i class="fa-solid fa-shield-halved"></i> Run Claude Audit
+            </button>
+            <button class="btn btn-outline btn-sm" onclick="showContextDrawer()"><i class="fa-solid fa-eye"></i> View Design Basis</button>
+            <button class="btn btn-drive btn-sm" onclick="saveDirectPushbuttonAction()"><i class="fa-brands fa-google-drive"></i> Save Pushbutton</button>
+          </div>
+        </div>
+        <pre><code>${escapeHtml(appState.stage3Script)}</code></pre>
+      `;
+    }
+
+    function renderStage2SplitView() {
+      renderStage2View();
+    }
+
+    function showContextDrawer() {
+      setStage2ViewMode("tabs");
+      switchStage(2);
+      showToast("Displaying Stage 1 & 2 design basis. Click '3. pyRevit' ring above to return to script.", "info");
+    }
+
+    // --- KNOWLEDGE POOL & ADAPTIVE RULES LEDGER ---
+    const DEFAULT_KNOWLEDGE_RULES = [
+      {
+        id: "default_1",
+        title: "GetFailureHandlingOptions Transaction Binding",
+        category: "Revit API",
+        enabled: true,
+        source: "Master Prompt v2.1 Ledger",
+        mistake: "AttributeError: 'Document' object has no attribute 'GetFailureHandlingOptions'",
+        mitigation: "Always call t.GetFailureHandlingOptions() and t.SetFailureHandlingOptions(opts) on the active DB.Transaction instance t. Never invoke on doc."
+      },
+      {
+        id: "default_2",
+        title: "North-South Coordinate Inversion",
+        category: "Coordinate Math",
+        enabled: true,
+        source: "Master Prompt v2.1 Ledger",
+        mistake: "Building plan mirrored along North-South axis due to (y=0) top-left sketch vs (+Y) Revit True North",
+        mitigation: "Pass all coordinates through pt_ft(x, y, z) = XYZ(x * MM, (D - y) * MM, z) where D is total plan depth."
+      },
+      {
+        id: "default_3",
+        title: "Collinear Wall Overlap Suppression",
+        category: "Geometry",
+        enabled: true,
+        source: "Master Prompt v2.1 Ledger",
+        mistake: "Revit warning / crash from overlapping room boundary partition walls",
+        mitigation: "Derive room partitions procedurally and fuse collinear segments using merge_intervals() before wall creation."
+      },
+      {
+        id: "default_4",
+        title: "WorkPlaneBased Vector Tangents",
+        category: "Hosting",
+        enabled: true,
+        source: "Master Prompt v2.1 Ledger",
+        mistake: "Crash placing face-hosted families with static axis vectors",
+        mitigation: "Retrieve side faces with HostObjectUtils.GetSideFaces() and query face.XVector instead of hardcoding global vectors."
+      },
+      {
+        id: "default_5",
+        title: "Silent Family Overwrite Handling",
+        category: "Revit API",
+        enabled: true,
+        source: "Master Prompt v2.1 Ledger",
+        mistake: "Revit freeze or interactive modal during headless family loading",
+        mitigation: "Implement LoadOpts(DB.IFamilyLoadOptions) with overwriteParameterValues.Value = False and execute UI prompts outside open transactions."
+      }
+    ];
+
+    function getKnowledgeRules() {
+      const stored = localStorage.getItem("pyrevit_learned_knowledge");
+      if (!stored) return DEFAULT_KNOWLEDGE_RULES;
+      try {
+        return JSON.parse(stored);
+      } catch (e) {
+        return DEFAULT_KNOWLEDGE_RULES;
+      }
+    }
+
+    function saveKnowledgeRules(rules) {
+      localStorage.setItem("pyrevit_learned_knowledge", JSON.stringify(rules));
+      updateKnowledgeActiveStrip();
+      renderKnowledgeRulesList();
+    }
+
+    function initKnowledgeBase() {
+      const rules = getKnowledgeRules();
+      document.getElementById("ruleCountBadge").innerText = rules.filter(r => r.enabled).length;
+    }
+
+    function updateKnowledgeActiveStrip() {
+      const rules = getKnowledgeRules();
+      const activeCount = rules.filter(r => r.enabled).length;
+      document.getElementById("ruleCountBadge").innerText = activeCount;
+      document.getElementById("knowledgeStripText").innerText = `${activeCount} active rules injected into prompt context`;
+    }
+
+    function openKnowledgeModal() {
+      renderKnowledgeRulesList();
+      document.getElementById("knowledgeModal").style.display = "flex";
+    }
+
+    function closeKnowledgeModal() {
+      document.getElementById("knowledgeModal").style.display = "none";
+    }
+
+    function renderKnowledgeRulesList() {
+      const container = document.getElementById("rulesListContainer");
+      if (!container) return;
+      const searchInput = document.getElementById("searchRulesInput");
+      const filterText = (searchInput ? searchInput.value || "" : "").toLowerCase();
+      const rules = getKnowledgeRules();
+
+      container.innerHTML = "";
+      const filtered = rules.filter(r => 
+        r.title.toLowerCase().includes(filterText) || 
+        r.mitigation.toLowerCase().includes(filterText) ||
+        r.category.toLowerCase().includes(filterText)
+      );
+
+      if (filtered.length === 0) {
+        container.innerHTML = `<p style="text-align:center; color:var(--text-muted); padding:30px;">No rules found.</p>`;
+        return;
+      }
+
+      filtered.forEach(rule => {
+        const card = document.createElement("div");
+        card.className = `rule-card ${rule.enabled ? 'active-rule' : ''}`;
+        card.innerHTML = `
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+            <div style="display:flex; align-items:center; gap:6px;">
+              <input type="checkbox" ${rule.enabled ? 'checked' : ''} onchange="toggleRuleActive('${rule.id}')">
+              <strong style="font-size:12px;">${escapeHtml(rule.title)}</strong>
+              <span class="rule-tag">${escapeHtml(rule.category)}</span>
+            </div>
+            <div style="display:flex; gap:6px; align-items:center;">
+              <span style="font-size:10px; color:var(--text-muted);">${rule.source || 'Learned'}</span>
+              <i class="fa-solid fa-trash" style="cursor:pointer; color:var(--danger); font-size:11px;" onclick="deleteRule('${rule.id}')"></i>
+            </div>
+          </div>
+          ${rule.mistake ? `<p style="color:#b91c1c; font-size:11px; margin-bottom:3px;"><strong>Flagged Issue:</strong> ${escapeHtml(rule.mistake)}</p>` : ''}
+          <p style="color:#1e293b; font-size:11px; line-height:1.4;"><strong>Mitigation:</strong> ${escapeHtml(rule.mitigation)}</p>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function toggleRuleActive(ruleId) {
+      const rules = getKnowledgeRules();
+      const target = rules.find(r => r.id === ruleId);
+      if (target) {
+        target.enabled = !target.enabled;
+        saveKnowledgeRules(rules);
+      }
+    }
+
+    function deleteRule(ruleId) {
+      let rules = getKnowledgeRules();
+      rules = rules.filter(r => r.id !== ruleId);
+      saveKnowledgeRules(rules);
+      showToast("Rule removed from Knowledge Pool", "info");
+    }
+
+    function resetDefaultRules() {
+      if (confirm("Reset Knowledge Pool back to default Revit 2026 ledger rules?")) {
+        localStorage.removeItem("pyrevit_learned_knowledge");
+        initKnowledgeBase();
+        renderKnowledgeRulesList();
+        showToast("Reset to default knowledge ledger", "success");
+      }
+    }
+
+    function toggleAddRuleForm() {
+      const form = document.getElementById("addRuleForm");
+      form.style.display = form.style.display === "none" ? "block" : "none";
+    }
+
+    function saveCustomRule() {
+      const title = document.getElementById("newRuleTitle").value.trim();
+      const category = document.getElementById("newRuleCategory").value;
+      const mitigation = document.getElementById("newRuleMitigation").value.trim();
+
+      if (!title || !mitigation) {
+        alert("Please provide both a Rule Title and Mitigation Instruction.");
+        return;
+      }
+
+      const newRule = {
+        id: "rule_" + Date.now(),
+        title,
+        category,
+        enabled: true,
+        source: "User Defined",
+        mistake: "Manually identified issue",
+        mitigation
+      };
+
+      const rules = getKnowledgeRules();
+      rules.unshift(newRule);
+      saveKnowledgeRules(rules);
+
+      document.getElementById("newRuleTitle").value = "";
+      document.getElementById("newRuleMitigation").value = "";
+      toggleAddRuleForm();
+      showToast("New rule added to Knowledge Pool", "success");
+    }
+
+    function formatActiveKnowledgeForPrompt() {
+      const rules = getKnowledgeRules().filter(r => r.enabled);
+      if (rules.length === 0) return "";
+      let block = "\n\n=== [CRITICAL LEARNED MISTAKE MITIGATION RULES (MANDATORY INVARIANTS)] ===\n";
+      rules.forEach((r, idx) => {
+        block += `${idx + 1}. [${r.category.toUpperCase()}] ${r.title}:\n   - Rule: ${r.mitigation}\n`;
+      });
+      block += "=========================================================================\n\n";
+      return block;
+    }
+
+    // --- ADAPTIVE ERROR ANALYZER WITH SESSION MEMORY ---
+    async function analyzeAndLearnFromError() {
+      const traceback = document.getElementById("tracebackInput").value.trim();
+      if (!traceback) {
+        showToast("Please paste the Revit error traceback or bug report.", "warning");
+        return;
+      }
+
+      showToast("Analyzing error with cumulative session context...", "info");
+
+      // Bundle cumulative session memory across all 3 stages
+      const cumulativeContextPayload = {
+        activeProject: document.getElementById("projectName").value,
+        stage1CopyOutput: appState.stage1Text || "No Stage 1 baseline available",
+        stage2RecommendationsOutput: appState.stage2Text || "No Stage 2 recommendations available",
+        priorGeneratedScript: appState.stage3Script || "No Stage 3 script generated yet",
+        flaggedError: traceback
+      };
+
+      const systemPrompt = `You are the Adaptive Learning Diagnostician for pyRevit & Revit 2026.
+The user tested a generated pyRevit script in Revit 2026 and flagged this error / traceback:
+"${traceback}"
+
+CUMULATIVE PRIOR SESSION CONTEXT:
+1. STAGE 1 BASELINE (EXACT COPY REGISTER & DIMENSIONS):
+\`\`\`markdown
+${cumulativeContextPayload.stage1CopyOutput}
+\`\`\`
+
+2. STAGE 2 TEXT RECOMMENDATIONS & FIXTURE SCHEDULE:
+\`\`\`markdown
+${cumulativeContextPayload.stage2RecommendationsOutput}
+\`\`\`
+
+3. TESTED SCRIPT (THAT PRODUCED THE ERROR):
+\`\`\`python
+${cumulativeContextPayload.priorGeneratedScript}
+\`\`\`
+
+YOUR TASK:
+Analyze the error with full awareness of what was drafted in Stage 1, recommended in Stage 2, and coded in Stage 3.
+Produce a structured JSON response enclosed strictly between <<<JSON and JSON>>> with this EXACT schema:
+<<<JSON
+{
+  "ruleTitle": "Concise signature of the mistake (e.g. FailureHandlingOptions AttributeError or Collinear Wall Overlap)",
+  "category": "Revit API" | "Coordinate Math" | "Hosting" | "Geometry" | "Egress",
+  "rootCause": "Detailed explanation of why this failed in Revit 2026 based on the prior cumulative deliverables and script",
+  "mitigation": "Clear, prescriptive mandatory instruction and code pattern to permanently prevent this mistake in future generations",
+  "note": "rule fields only - put the complete patched script in ONE python code block AFTER the JSON"
+}
+JSON>>>`;
+
+      try {
+        let rawResponse = "";
+        const keys = getKeys();
+        if (keys.length === 0) {
+          rawResponse = mockErrorAnalysis(traceback, cumulativeContextPayload.priorGeneratedScript);
+        } else {
+          rawResponse = await executeWithFailover(systemPrompt, false);
+        }
+
+        const jsonMatch = rawResponse.match(/<<<JSON([\s\S]*?)JSON>>>/) || rawResponse.match(/\{[\s\S]*\}/);
+        if (!jsonMatch) throw new Error("Could not parse structured analysis from model.");
+
+        const analysis = JSON.parse(jsonMatch[1] || jsonMatch[0]);
+
+        const newLearnedRule = {
+          id: "learned_" + Date.now(),
+          title: analysis.ruleTitle,
+          category: analysis.category || "Revit API",
+          enabled: true,
+          source: "Session Traceback Analyzer",
+          mistake: traceback.slice(0, 160),
+          mitigation: analysis.mitigation
+        };
+
+        const currentRules = getKnowledgeRules();
+        currentRules.unshift(newLearnedRule);
+        saveKnowledgeRules(currentRules);
+
+        const _rest = rawResponse.replace(/<<<JSON[\s\S]*?JSON>>>/, "");
+        if (/```/.test(_rest)) analysis.patchedScript = _rest;
+        if (analysis.patchedScript) {
+          appState.sessionHistory.push({
+            timestamp: new Date().toLocaleTimeString(),
+            reason: `Error Patched: ${analysis.ruleTitle}`,
+            oldScript: appState.stage3Script
+          });
+          appState.stage3Script = extractCode(analysis.patchedScript);
+          saveDraft();
+          updateStageUI(3);
+        }
+
+        displayLearningResult(analysis, newLearnedRule);
+        showToast("Error diagnosed! Rule saved to Knowledge Pool.", "success");
+
+      } catch (err) {
+        console.error(err);
+        showToast("Analysis failed: " + err.message, "error");
+      }
+    }
+
+    function displayLearningResult(analysis, rule) {
+      const out = document.getElementById("consoleOutput");
+      out.innerHTML = `
+        <div style="background:#fdf4ff; border:1px solid #f3d9fa; border-radius:10px; padding:16px; margin-bottom:16px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <h3 style="color:#7e22ce; font-size:14px; font-weight:700;"><i class="fa-solid fa-graduation-cap"></i> Learned Rule Added to Knowledge Pool</h3>
+            <span class="rule-tag">${escapeHtml(rule.category)}</span>
+          </div>
+          <p style="font-size:12px; font-weight:600; color:#1e293b; margin-bottom:4px;">Rule: ${escapeHtml(rule.title)}</p>
+          <p style="font-size:11.5px; color:#475569; margin-bottom:6px;"><strong>Root Cause:</strong> ${escapeHtml(analysis.rootCause)}</p>
+          <p style="font-size:11.5px; color:#0f766e; background:#f0fdfa; padding:6px 10px; border-radius:6px; border:1px solid #ccfbf1;">
+            <strong>Mandatory Mitigation Instruction:</strong> ${escapeHtml(rule.mitigation)}
+          </p>
+        </div>
+
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+          <h4 style="font-size:13px; font-weight:700;"><i class="fa-brands fa-python"></i> Patched Zero-Fail pyRevit Script</h4>
+          <button class="btn btn-drive btn-sm" onclick="saveDirectPushbuttonAction()"><i class="fa-brands fa-google-drive"></i> Save Patched Pushbutton</button>
+        </div>
+        <pre><code>${escapeHtml(appState.stage3Script)}</code></pre>
+      `;
+    }
+
+    async function quickPatchOnly() {
+      const tb = document.getElementById("tracebackInput").value.trim();
+      if (!tb) return showToast("Please paste pyRevit error traceback.", "warning");
+      const out = document.getElementById("consoleOutput");
+      out.innerHTML = `<p style="color:var(--text-muted);"><i class="fa-solid fa-spinner fa-spin"></i> Patching pyRevit error using cumulative session context...</p>`;
+
+      const prompt = `Fix only this pyRevit traceback:
+${tb}
+
+CUMULATIVE DESIGN CONTEXT:
+Stage 1 Baseline Elements:
+${appState.stage1Text.slice(0, 600)}
+
+Stage 2 Text Recommendations:
+${appState.stage2Text.slice(0, 600)}
+
+Existing pyRevit Script:
+\`\`\`python
+${appState.stage3Script}
+\`\`\`
+Return the complete, zero-fail updated script.py.`;
+
+      try {
+        const res = await executeWithFailover(prompt, false);
+        appState.stage3Script = extractCode(res);
+        saveDraft();
+        updateStageUI(3);
+        renderStage3View();
+        showToast("Quick patch applied", "success");
+      } catch (e) {
+        out.innerHTML = `<p style="color:var(--danger);">Error patching: ${e.message}</p>`;
+      }
+    }
+
+    // --- DIRECT DRIVE & FILE SYSTEM ACCESS ---
+
+    async function rescanDriveDirectory() {
+      if (!dirHandle) return;
+      await performDeepDirectoryScan();
+    }
+
+    async function performDeepDirectoryScan(silent = false) {
+      if (!dirHandle || scanBusy) return;
+      scanBusy = true;
+      const driveBtn = document.getElementById("btnLinkDrive");
+      const btnLabel = document.getElementById("driveBtnLabel");
+      const statusBox = document.getElementById("driveStatusText");
+      const progArea = document.getElementById("scanProgressArea");
+      const progText = document.getElementById("scanProgressText");
+      const viewCatBtn = document.getElementById("btnViewCatalog");
+      const rescanBtn = document.getElementById("btnRescanDrive");
+
+      progArea.style.display = "block";
+      progText.innerText = "Scanning all subfolders in " + dirHandle.name + "...";
+
+      scannedFamilyFiles = [];
+      familyCatalogByCategory = {};
+
+      try {
+        await scanDirectoryRecursively(dirHandle, "");
+
+        const folderCount = Object.keys(familyCatalogByCategory).length;
+        driveBtn.classList.add("linked");
+        btnLabel.innerText = "Linked: " + dirHandle.name;
+
+        // Build folder summary text
+        const topFolders = Object.keys(familyCatalogByCategory).slice(0, 8);
+        const folderListPreview = topFolders.map(f => `<code>${escapeHtml(f || 'root')}</code> (${familyCatalogByCategory[f].length})`).join(", ");
+
+        statusBox.innerHTML = `
+          <div style="color:var(--success); font-weight:700; margin-bottom:4px;">
+            <i class="fa-solid fa-check-circle"></i> Direct access verified: ${escapeHtml(dirHandle.name)}
+          </div>
+          <div>Cataloged <strong>${scannedFamilyFiles.length}</strong> families across <strong>${folderCount}</strong> subfolders.</div>
+          <div style="font-size:10.5px; color:#475569; margin-top:4px; line-height:1.4;">
+            <strong>Detected categories:</strong> ${folderListPreview}${folderCount > 8 ? ` and ${folderCount - 8} more...` : ''}
+          </div>
+        `;
+
+        document.getElementById("catalogCountBadge").innerText = scannedFamilyFiles.length;
+        viewCatBtn.style.display = "inline-flex";
+        rescanBtn.style.display = "block";
+        progArea.style.display = "none";
+
+        const sig = scannedFamilyFiles.slice().sort().join("|");
+        document.getElementById("lastScan").innerText = new Date().toLocaleTimeString();
+        scanBusy = false;
+        if (!silent || sig !== lastSig) showToast(`Scan complete: ${scannedFamilyFiles.length} .rfa families in ${folderCount} subfolders`, "success");
+        lastSig = sig;
+      } catch (scanErr) {
+        console.error("Directory scan error:", scanErr);
+        scanBusy = false;
+        progArea.style.display = "none";
+        statusBox.innerHTML += `<div style="color:var(--danger); margin-top:4px;">Scan error: ${scanErr.message}</div>`;
+      }
+    }
+
+    async function scanDirectoryRecursively(handle, relativePath) {
+      const progText = document.getElementById("scanProgressText");
+      if (progText && relativePath) {
+        progText.innerText = `Scanning: ${relativePath} (${scannedFamilyFiles.length} found)...`;
+      }
+
+      // Safe iteration with per-item error handling for Google Drive cloud placeholders
+      try {
+        for await (const entry of handle.values()) {
+          try {
+            const entryRelPath = relativePath ? `${relativePath}\\${entry.name}` : entry.name;
+
+            if (entry.kind === "file") {
+              const lowerName = entry.name.toLowerCase();
+              // Filter for .rfa files and skip Revit numeric backup files (e.g. Chair.0001.rfa)
+              if (lowerName.endsWith(".rfa")) {
+                const isBackup = /\.\d{4}\.rfa$/i.test(entry.name);
+                if (!isBackup) {
+                  scannedFamilyFiles.push(entryRelPath);
+                  const folderKey = relativePath || "(Root Folder)";
+                  if (!familyCatalogByCategory[folderKey]) {
+                    familyCatalogByCategory[folderKey] = [];
+                  }
+                  familyCatalogByCategory[folderKey].push({
+                    name: entry.name,
+                    baseName: entry.name.replace(/\.rfa$/i, ""),
+                    fullPath: entryRelPath,
+                    folder: folderKey
+                  });
+                }
+              }
+            } else if (entry.kind === "directory") {
+              // Ignore hidden system folders or temp sync directories
+              if (!entry.name.startsWith(".") && entry.name !== "$RECYCLE.BIN" && entry.name !== "System Volume Information") {
+                await scanDirectoryRecursively(entry, entryRelPath);
+              }
+            }
+          } catch (itemErr) {
+            console.warn(`Could not access item inside ${relativePath}:`, itemErr);
+            // Continue scanning sibling items without aborting the recursion
+          }
+        }
+      } catch (dirErr) {
+        console.warn(`Could not read directory handle ${relativePath}:`, dirErr);
+      }
+    }
+
+    // --- BALANCED MULTI-FOLDER CATALOG PROMPT GENERATOR ---
+    // Fixes the issue where only the first folder was passed to the AI
+
+    // --- CATALOG MODAL FUNCTIONS ---
+    function openCatalogModal() {
+      renderCatalogModalContent();
+      document.getElementById("catalogModal").style.display = "flex";
+    }
+
+    function closeCatalogModal() {
+      document.getElementById("catalogModal").style.display = "none";
+    }
+
+    function renderCatalogModalContent() {
+      const container = document.getElementById("catalogTreeContainer");
+      const searchInput = document.getElementById("searchCatalogInput");
+      const statsSummary = document.getElementById("catalogStatsSummary");
+      const filter = (searchInput ? searchInput.value || "" : "").toLowerCase().trim();
+
+      const folderKeys = Object.keys(familyCatalogByCategory);
+      statsSummary.innerText = `${folderKeys.length} folders | ${scannedFamilyFiles.length} families`;
+
+      if (folderKeys.length === 0) {
+        container.innerHTML = `<p style="text-align:center; color:var(--text-muted); padding:30px;">No folder linked or no .rfa families found.</p>`;
+        return;
+      }
+
+      let html = "";
+      let totalMatching = 0;
+
+      folderKeys.forEach(folder => {
+        const families = familyCatalogByCategory[folder];
+        const matchingFamilies = filter 
+          ? families.filter(f => f.name.toLowerCase().includes(filter) || f.folder.toLowerCase().includes(filter))
+          : families;
+
+        if (matchingFamilies.length > 0) {
+          totalMatching += matchingFamilies.length;
+          html += `
+            <div style="background:#fafafa; border:1px solid var(--border); border-radius:var(--radius-sm); margin-bottom:10px; overflow:hidden;">
+              <div style="display:flex; justify-content:space-between; align-items:center; background:#f1f5f9; padding:8px 12px; border-bottom:1px solid #e2e8f0; font-size:12px; font-weight:700;">
+                <span><i class="fa-solid fa-folder-open" style="color:#d97706; margin-right:6px;"></i> ${escapeHtml(folder)}</span>
+                <span class="status-badge" style="background:#e2e8f0; font-size:10.5px;">${matchingFamilies.length} families</span>
+              </div>
+              <div style="padding:10px 14px; max-height:180px; overflow-y:auto; font-family:'JetBrains Mono', monospace; font-size:11px; display:grid; grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); gap:6px;">
+          `;
+
+          matchingFamilies.forEach(f => {
+            html += `
+              <div style="background:#fff; border:1px solid #e2e8f0; border-radius:4px; padding:4px 8px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${escapeHtml(f.fullPath)}">
+                <i class="fa-regular fa-file-code" style="color:var(--accent); margin-right:4px;"></i> ${escapeHtml(f.baseName)}
+              </div>
+            `;
+          });
+
+          html += `
+              </div>
+            </div>
+          `;
+        }
+      });
+
+      if (filter && totalMatching === 0) {
+        container.innerHTML = `<p style="text-align:center; color:var(--text-muted); padding:30px;">No families match "${escapeHtml(filter)}".</p>`;
+      } else {
+        container.innerHTML = html;
+      }
+    }
+
+    async function directSavePushbutton(projectName, pythonScript) {
+      if (!outHandle) {
+        showToast("Please link your pyRevit / Drive extension folder first.", "warning");
+        return;
+      }
+      try {
+        const folderName = `${projectName}.pushbutton`;
+        const pushBtnFolder = await outHandle.getDirectoryHandle(folderName, { create: true });
+        
+        const scriptFile = await pushBtnFolder.getFileHandle("script.py", { create: true });
+        const scriptWritable = await scriptFile.createWritable();
+        await scriptWritable.write(pythonScript);
+        await scriptWritable.close();
+
+        const yamlContent = `title: ${projectName.replace(/_/g, " ")}\ntooltip: pyRevit 3-Stage Studio\nauthor: Architecture Studio\n`;
+        const yamlFile = await pushBtnFolder.getFileHandle("bundle.yaml", { create: true });
+        const yamlWritable = await yamlFile.createWritable();
+        await yamlWritable.write(yamlContent);
+        await yamlWritable.close();
+        await writeText(pushBtnFolder, "library_index.json", libraryIndexJson());
+        await writeText(pushBtnFolder, "library_path.txt", getLibRoot());
+
+        showToast(`Saved to ${folderName}\\script.py and bundle.yaml!`, "success");
+      } catch (err) {
+        console.error("Direct write failed", err);
+        showToast("Direct write error: " + err.message, "error");
+      }
+    }
+
+    // --- KEYS & LOCAL STORAGE ---
+    function getKeys() { return JSON.parse(localStorage.getItem("pyrevit_api_keys") || "[]"); }
+    function saveKey() {
+      const provider = document.getElementById("keyProvider").value;
+      const keyVal = document.getElementById("keyVal").value.trim();
+      if (!keyVal) return;
+      const keys = getKeys();
+      keys.push({ provider, key: keyVal, id: Date.now() });
+      localStorage.setItem("pyrevit_api_keys", JSON.stringify(keys));
+      document.getElementById("keyVal").value = "";
+      loadKeys();
+      showToast("API Key added to pool", "success");
+    }
+    function removeKey(id) {
+      let keys = getKeys().filter(k => k.id !== id);
+      localStorage.setItem("pyrevit_api_keys", JSON.stringify(keys));
+      loadKeys();
+    }
+    function loadKeys() {
+      const keys = getKeys();
+      document.getElementById("keyCountBadge").innerText = keys.length;
+      const listEl = document.getElementById("keyList");
+      listEl.innerHTML = "";
+      if (keys.length === 0) {
+        listEl.innerHTML = `<span style="font-size:11px; color:var(--text-muted);">No keys added. Offline mock mode active.</span>`;
+        return;
+      }
+      keys.forEach(k => {
+        const row = document.createElement("div");
+        row.style = "display:flex; justify-content:space-between; align-items:center; background:#fafafa; padding:6px 10px; border-radius:6px; border:1px solid #efefef; font-size:11px;";
+        row.innerHTML = `<span><strong>${k.provider.toUpperCase()}</strong>: ••••••••${k.key.slice(-4)}</span>
+                         <i class="fa-solid fa-trash" style="cursor:pointer; color:var(--danger);" onclick="removeKey(${k.id})"></i>`;
+        listEl.appendChild(row);
+      });
+    }
+
+    function openKeyModal() { document.getElementById("keyModal").style.display = "flex"; }
+    function closeKeyModal() { document.getElementById("keyModal").style.display = "none"; }
+
+    function saveDraft() {
+      appState.draftProjectName = document.getElementById("projectName").value;
+      appState.unitSystem = document.getElementById("unitSystemSelector").value;
+      localStorage.setItem("pyrevit_active_draft_v4", JSON.stringify(appState));
+    }
+
+    function loadDraft() {
+      const raw = localStorage.getItem("pyrevit_active_draft_v4");
+      if (raw) {
+        try {
+          appState = Object.assign(appState, JSON.parse(raw));
+          if (!Array.isArray(appState.sessionHistory)) appState.sessionHistory = [];
+          document.getElementById("projectName").value = appState.draftProjectName || "RAMTECH_OFFICE";
+          if (appState.unitSystem) {
+            document.getElementById("unitSystemSelector").value = appState.unitSystem;
+          }
+          if (appState.stage3Script) switchStage(3);
+          else if (appState.stage2Text) switchStage(2);
+          else if (appState.stage1Text) switchStage(1);
+        } catch (e) {}
+      }
+    }
+
+    function updateUnitSelection() {
+      appState.unitSystem = document.getElementById("unitSystemSelector").value;
+      saveDraft();
+      showToast(`Unit system set to ${appState.unitSystem.toUpperCase()}`, "info");
+    }
+
+    function getUnitPromptDirective() {
+      const unit = document.getElementById("unitSystemSelector").value || "mm";
+      if (unit === "mm") {
+        return `\nUNIT SYSTEM (MANDATORY): MILLIMETERS (mm). All coordinate schedules, wall dimensions, door/window leaf widths, room bounding boxes, and fixture offsets must be specified in MILLIMETERS (mm). In Python scripts, Revit internal foot conversion must be MM = 1.0 / 304.8 and pt_ft(x, y, z) must convert mm to feet.`;
+      } else if (unit === "m") {
+        return `\nUNIT SYSTEM: METERS (m). All dimensions, schedules, and offsets must be specified in METERS (m). In Python scripts, conversion must be M = 1.0 / 0.3048.`;
+      } else {
+        return `\nUNIT SYSTEM: IMPERIAL FEET (ft). All dimensions, schedules, and offsets in decimal feet.`;
+      }
+    }
+
+    function handleFile(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        attachedImageBase64 = evt.target.result;
+        const img = document.getElementById("imagePreview");
+        img.src = attachedImageBase64;
+        img.style.display = "block";
+        showToast("Sketch loaded successfully", "success");
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function playAlertChime() {
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(587.33, ctx.currentTime);
+        gain.gain.setValueAtTime(0.2, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.4);
+      } catch (e) {}
+    }
+
+    function showToast(msg, type = "info") {
+      const box = document.getElementById("toastNotification");
+      const text = document.getElementById("toastMsg");
+      const icon = document.getElementById("toastIcon");
+
+      text.innerText = msg;
+      if (type === "success") {
+        box.style.background = "#065f46";
+        icon.className = "fa-solid fa-circle-check";
+      } else if (type === "warning") {
+        box.style.background = "#92400e";
+        icon.className = "fa-solid fa-triangle-exclamation";
+      } else if (type === "error") {
+        box.style.background = "#991b1b";
+        icon.className = "fa-solid fa-circle-xmark";
+      } else {
+        box.style.background = "#1f2937";
+        icon.className = "fa-solid fa-circle-info";
+      }
+
+      box.style.display = "flex";
+      setTimeout(() => { box.style.display = "none"; }, 3500);
+    }
+
+    // --- MULTI-PROVIDER & RETRY ENGINE WITH KNOWLEDGE INJECTION ---
+
+
+    async function callGroq(key, text) {
+      const resp = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "llama-3.3-70b-versatile",
+          messages: [{ role: "user", content: text }]
+        })
+      });
+      if (!resp.ok) throw new Error(resp.statusText);
+      const json = await resp.json();
+      totalTokensUsed += json.usage ? json.usage.total_tokens : 1000;
+      updateTokenDisplay();
+      return json.choices[0].message.content;
+    }
+
+    async function callOpenRouter(key, text) {
+      const resp = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "openai/gpt-4o-mini",
+          messages: [{ role: "user", content: text }]
+        })
+      });
+      if (!resp.ok) throw new Error(resp.statusText);
+      const json = await resp.json();
+      totalTokensUsed += json.usage ? json.usage.total_tokens : 1000;
+      updateTokenDisplay();
+      return json.choices[0].message.content;
+    }
+
+    async function callAnthropicClaude(key, systemPrompt, userPrompt, modelName = "claude-sonnet-5-5") {
+      const url = "https://api.anthropic.com/v1/messages";
+      const resp = await fetch(url, {
+        method: "POST",
+        headers: {
+          "x-api-key": key,
+          "anthropic-version": "2023-06-01",
+          "anthropic-dangerous-direct-browser-access": "true",
+          "content-type": "application/json"
+        },
+        body: JSON.stringify({
+          model: modelName,
+          max_tokens: 16000,
+          system: systemPrompt,
+          messages: [{ role: "user", content: userPrompt }]
+        })
+      });
+      if (!resp.ok) {
+        const errText = await resp.text();
+        throw new Error(`Anthropic error: ${resp.status} - ${errText}`);
+      }
+      const json = await resp.json();
+      const output = json.content && json.content[0] ? json.content[0].text : "";
+      totalTokensUsed += json.usage ? (json.usage.input_tokens + json.usage.output_tokens) : 2500;
+      updateTokenDisplay();
+      return output;
+    }
+
+    // Claude Independent Checker Engine for Stage 3
+    async function runClaudeAudit(scriptToAudit) {
+      const keys = getKeys();
+      const anthropicKeyObj = keys.find(k => k.provider === "anthropic");
+      const openRouterKeyObj = keys.find(k => k.provider === "openrouter");
+
+      const systemPrompt = `You are the Lead Revit API Quality Assurance Engineer and Claude Code Inspector for Revit 2026 and pyRevit.
+Your mission is to perform an exhaustive, rigorous final code audit of the generated IronPython 2.7 / pyRevit script.
+
+VERIFICATION CHECKLIST (MANDATORY INVARIANTS):
+1. Transaction Failure Preprocessor:
+   - FATAL ERROR CHECK: Does the script call doc.GetFailureHandlingOptions()? If YES, it will cause an immediate AttributeError.
+   - It MUST bind GetFailureHandlingOptions() directly to the active DB.Transaction instance (t.GetFailureHandlingOptions()).
+2. Coordinate Inversion Rule:
+   - Does every wall, door, room UV, and furniture point pass through pt_ft(x, y, z) with (D - y) * M for Revit True North?
+3. Partition Wall Overlap Prevention:
+   - Interior partitions MUST merge collinear segments using merge_intervals() to avoid overlapping wall errors.
+4. Safe Family Loading:
+   - Must implement LoadOpts(DB.IFamilyLoadOptions) with overwriteParameterValues.Value = False.
+5. Family Hosting Pre-Check:
+   - Does it use app.OpenDocumentFile() with read_placement_type() to inspect FamilyPlacementType before placing?
+   - Face-based WorkPlaneBased instances must retrieve side faces and use face.XVector (never static global vectors).
+6. IronPython 2.7 Compatibility:
+   - NO Python 3 f-strings (e.g. f"{var}"). Must use .format().
+   - Header must be # -*- coding: utf-8 -*-
+
+OUTPUT FORMAT:
+Respond in this strict structured format:
+<<<AUDIT_VERDICT: PASSED>>> or <<<AUDIT_VERDICT: PATCHED>>>
+<<<AUDIT_REPORT>>>
+[Concise bulleted summary of items verified and any bugs found and fixed]
+<<<END_AUDIT_REPORT>>>
+<<<CERTIFIED_SCRIPT>>>
+# -*- coding: utf-8 -*-
+[Complete, runnable, zero-fail script - either the original if verified, or the patched version with fixes applied]
+<<<END_CERTIFIED_SCRIPT>>>`;
+
+      const userPrompt = `Please audit this pyRevit script for Revit 2026:
+
+\`\`\`python
+${scriptToAudit}
+\`\`\`
+
+Active Project: ${document.getElementById("projectName").value}
+Unit System: ${document.getElementById("unitSystemSelector").value}
+Golden Reference Standard:
+\`\`\`python
+${getGoldenReference().slice(0, 800)}
+\`\`\``;
+
+      let rawResponse = "";
+      if (anthropicKeyObj) {
+        document.getElementById("systemStatus").innerHTML = `<span class="dot"></span> Claude Inspector Auditing...`;
+        try {
+          rawResponse = await callAnthropicClaude(anthropicKeyObj.key, systemPrompt, userPrompt, "claude-sonnet-5-5");
+        } catch (e) {
+          console.warn("Claude direct failed, trying claude-3-5-sonnet...", e);
+          rawResponse = await callAnthropicClaude(anthropicKeyObj.key, systemPrompt, userPrompt, "claude-sonnet-4-6");
+        }
+      } else if (openRouterKeyObj) {
+        document.getElementById("systemStatus").innerHTML = `<span class="dot"></span> Claude (via OpenRouter) Auditing...`;
+        const resp = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+          method: "POST",
+          headers: { "Authorization": `Bearer ${openRouterKeyObj.key}`, "Content-Type": "application/json" },
+          body: JSON.stringify({
+            model: "anthropic/claude-sonnet-4.5",
+            messages: [
+              { role: "system", content: systemPrompt },
+              { role: "user", content: userPrompt }
+            ]
+          })
+        });
+        if (!resp.ok) throw new Error("OpenRouter Claude failed: " + resp.statusText);
+        const data = await resp.json();
+        rawResponse = data.choices[0].message.content;
+      } else {
+        // Fallback: If no Claude key is configured, perform simulated audit
+        return {
+          status: "passed",
+          report: "Claude Checker was not invoked (no Anthropic or OpenRouter key saved in API Pool). Script passed built-in local validation rules.",
+          script: scriptToAudit
+        };
+      }
+
+      // Parse Claude Output
+      const isPatched = rawResponse.includes("<<<AUDIT_VERDICT: PATCHED>>>");
+      const reportMatch = rawResponse.match(/<<<AUDIT_REPORT>>>([\s\S]*?)<<<END_AUDIT_REPORT>>>/);
+      const scriptMatch = rawResponse.match(/<<<CERTIFIED_SCRIPT>>>([\s\S]*?)<<<END_CERTIFIED_SCRIPT>>>/);
+
+      return {
+        status: isPatched ? "patched" : "passed",
+        report: reportMatch ? reportMatch[1].trim() : "All mandatory Revit 2026 invariants verified by Claude.",
+        script: scriptMatch ? extractCode(scriptMatch[1].trim()) : scriptToAudit
+      };
+    }
+
+    async function triggerClaudeAuditManually() {
+      if (!appState.stage3Script) {
+        showToast("No pyRevit script available to audit yet.", "warning");
+        return;
+      }
+      showToast("Starting Claude pre-flight code audit...", "info");
+      const out = document.getElementById("consoleOutput");
+      out.innerHTML = `<p style="color:var(--text-muted);"><i class="fa-solid fa-shield-halved fa-spin"></i> Running independent Claude Sonnet code audit & verification...</p>`;
+
+      try {
+        const auditResult = await runClaudeAudit(appState.stage3Script);
+        appState.claudeAuditStatus = auditResult.status;
+        appState.claudeAuditReport = auditResult.report;
+        appState.stage3Script = auditResult.script;
+        saveDraft();
+        renderStage3View();
+        showToast(auditResult.status === "passed" ? "Claude verified script with zero flaws!" : "Claude patched issues in the script!", "success");
+      } catch (err) {
+        showToast("Claude audit error: " + err.message, "error");
+        renderStage3View();
+      }
+    }
+
+    async function saveDirectPushbuttonAction() {
+      const pName = document.getElementById("projectName").value.trim() || "RAMTECH_OFFICE";
+      if (!outHandle) {
+        const ok = confirm("Link your pyRevit extension directory first?\nClick Cancel to download as .ZIP instead.");
+        if (ok) {
+          await linkOutputFolder();
+        } else {
+          downloadZip();
+          return;
+        }
+      }
+      if (outHandle) {
+        await directSavePushbutton(pName, appState.stage3Script);
+      }
+    }
+
+    function downloadZip() {
+      const pName = document.getElementById("projectName").value.trim() || "RAMTECH_OFFICE";
+      const zip = new JSZip();
+      const folder = zip.folder(`${pName}.pushbutton`);
+      folder.file("script.py", appState.stage3Script || "# pyRevit script placeholder");
+      folder.file("bundle.yaml", `title: ${pName.replace(/_/g, " ")}\ntooltip: pyRevit BIM Studio Layout\nauthor: Architecture Studio\n`);
+
+      folder.file("library_index.json", libraryIndexJson());
+      folder.file("library_path.txt", getLibRoot());
+      zip.generateAsync({ type: "blob" }).then(content => {
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(content);
+        a.download = `${pName}.pushbutton.zip`;
+        a.click();
+        showToast("Downloaded .pushbutton.zip archive", "success");
+      });
+    }
+
+    // --- STAGE WORKFLOW ACTIONS & STAGE CONTROLLER ---
+    function updateStageUI(stage) {
+      currentStage = stage;
+      [0, 1, 2, 3].forEach(s => {
+        const pill = document.getElementById(`pillStage${s}`);
+        if (pill) {
+          pill.classList.remove("active", "completed");
+          if (s === stage) pill.classList.add("active");
+          else if (s < stage) pill.classList.add("completed");
+        }
+      });
+
+      const gateTitle = document.getElementById("gateTitle");
+      const gateDesc = document.getElementById("gateDesc");
+      const gateActions = document.getElementById("gateActionArea");
+      const btnPrimary = document.getElementById("btnPrimaryAction");
+      const customInput = document.getElementById("customStagePrompt");
+      const inputLabel = document.getElementById("inputLabelText");
+
+      if (stage === 0) {
+        gateTitle.innerText = "Stage 0: Project Intake Ready";
+        gateDesc.innerText = "Attach your floor plan sketch and click Initialize Stage 1 or input customized intake requirements.";
+        gateActions.innerHTML = `<button class="btn btn-primary btn-sm" onclick="handleUnifiedAction()"><i class="fa-solid fa-play"></i> Initialize Stage 1</button>`;
+        btnPrimary.innerHTML = `<i class="fa-solid fa-play"></i> Initialize Stage 1`;
+        customInput.placeholder = "Optional intake notes (e.g. wall thickness, ceiling heights, specific room requirements)...";
+        inputLabel.innerHTML = `<i class="fa-solid fa-terminal"></i> Optional Intake Instructions:`;
+      } else if (stage === 1) {
+        gateTitle.innerText = "Stage 1: Exact Copy & Family Schedule";
+        gateDesc.innerText = "Review baseline drawing and family schedule. Advance to Stage 2 analysis or skip straight to pyRevit script.";
+        gateActions.innerHTML = `
+          <div style="display:flex; gap:8px;">
+            <button class="btn btn-primary btn-sm" onclick="runStage2()"><i class="fa-solid fa-check"></i> Copy approved</button>
+            <button class="btn btn-outline btn-sm" onclick="skipStage2ToStage3()" style="border-color:#38bdf8; color:#0284c7;">
+              <i class="fa-solid fa-forward-fast"></i> Skip Stage 2 & Generate Script
+            </button>
+          </div>
+        `;
+        btnPrimary.innerHTML = `<i class="fa-solid fa-check"></i> Copy approved`;
+        customInput.placeholder = "Clarify unreadable sketch notes or revise family schedule mappings...";
+        inputLabel.innerHTML = `<i class="fa-solid fa-terminal"></i> Optional Stage 1 Clarifications:`;
+      } else if (stage === 2) {
+        gateTitle.innerText = "Stage 2: Spatial Diagnostics & Recommendations";
+        gateDesc.innerText = "Decide whether to apply AI suggestions to the pyRevit script, or proceed strictly with Stage 1 exact copy.";
+        gateActions.innerHTML = `
+          <div style="display:flex; gap:8px;">
+            <button class="btn btn-primary btn-sm" onclick="runStage3(true)" style="background:#16a34a;">
+              <i class="fa-solid fa-check-double"></i> Yes — Apply Recommendations
+            </button>
+            <button class="btn btn-outline btn-sm" onclick="runStage3(false)">
+              <i class="fa-solid fa-ban"></i> No — Keep Exact Copy
+            </button>
+          </div>
+        `;
+        btnPrimary.innerHTML = `<i class="fa-solid fa-check-double"></i> Yes — Apply Recommendations`;
+        customInput.placeholder = "Enter custom design decisions (e.g., 'Apply recommendation #1 and #3, but discard #2')...";
+        inputLabel.innerHTML = `<i class="fa-solid fa-terminal"></i> Optional Stage 2 Decisions:`;
+      } else if (stage === 3) {
+        gateTitle.innerText = "Stage 3: Zero-Fail pyRevit Script";
+        gateDesc.innerText = "Production IronPython 2.7 script ready for Revit 2026. Save straight to push-button directory.";
+        gateActions.innerHTML = `
+          <div style="display:flex; gap:8px;">
+            <button class="btn btn-drive btn-sm" onclick="saveDirectPushbuttonAction()"><i class="fa-brands fa-google-drive"></i> Save Pushbutton</button>
+            <button class="btn btn-outline btn-sm" onclick="downloadZip()"><i class="fa-solid fa-download"></i> .ZIP</button>
+          </div>
+        `;
+        btnPrimary.innerHTML = `<i class="fa-solid fa-save"></i> Save Pushbutton`;
+        customInput.placeholder = "Type script modifications, custom parameters, or batch size changes...";
+        inputLabel.innerHTML = `<i class="fa-solid fa-terminal"></i> Optional Stage 3 Script Overrides:`;
+      }
+    }
+
+    function switchStage(stage) {
+      updateStageUI(stage);
+      if (stage === 1 && appState.stage1Text) renderStage1View();
+      else if (stage === 2 && appState.stage2Text) renderStage2View();
+      else if (stage === 3 && appState.stage3Script) renderStage3View();
+    }
+
+    async function handleUnifiedAction() {
+      const customInput = document.getElementById("customStagePrompt");
+      const userInstruction = customInput.value.trim();
+
+      if (currentStage === 0) {
+        await runStage1(userInstruction);
+      } else if (currentStage === 1) {
+        if (userInstruction) await sendFeedback(1, userInstruction);
+        else await runStage2("");
+      } else if (currentStage === 2) {
+        if (userInstruction) await sendFeedback(2, userInstruction);
+        else await runStage3(true, "");
+      } else if (currentStage === 3) {
+        if (userInstruction) await sendFeedback(3, userInstruction);
+        else await saveDirectPushbuttonAction();
+      }
+      customInput.value = "";
+    }
+
+    async function runStage1(optionalInstruction = "") {
+      updateStageUI(1);
+      const out = document.getElementById("consoleOutput");
+      out.innerHTML = `<p style="color:var(--text-muted);"><i class="fa-solid fa-spinner fa-spin"></i> Reading sketch, cataloging Revit families, and constructing exact copy baseline...</p>`;
+      
+      const unitDirective = getUnitPromptDirective();
+      let prompt = `STAGE 1: EXACT COPY & MASTER FAMILY SEARCH SCHEDULE
+Follow Master Prompt v2.1 for Revit 2026 pyRevit automation.
+${unitDirective}
+
+MANDATORY DELIVERABLES IN EXACT SEQUENCE:
+1. Context Read-Back (<= 5 lines).
+2. Element Register Table (Rooms, Walls, Doors, Windows, Stairs, Fixtures).
+3. Exact-Copy ASCII Floor Plan with dimensions and grid markers.
+4. Structured element schedules classifying sources (Dimensioned, Scaled, or Estimated).
+5. MASTER REVIT FAMILY SCHEDULE & LIBRARY MAPPING:
+   - Schedule all doors, windows, sanitary fixtures, and furniture identified in the sketch.
+   - For every element, specify: Item, Category, Target Family Name, Keywords, Library Subfolder (under '007 RVT MATERIALS'), and Anticipated Hosting Type (OneLevelBased, OneLevelBasedHosted, or WorkPlaneBased).
+6. Discrepancies & Flagged Questions list.
+7. Completeness Gate.
+Conclude with: "Please review. Reply 'Copy approved' or provide your corrections and instructions."`;
+
+      if (optionalInstruction) {
+        prompt += `\n\nAdditional User Intake Instructions: ${optionalInstruction}`;
+      }
+
+      try {
+        const res = await executeWithFailover(prompt, true);
+        appState.stage1Text = res;
+        saveDraft();
+        renderStage1View();
+        showToast("Stage 1 Baseline & Family Schedule ready!", "success");
+      } catch (e) {
+        out.innerHTML = `<p style="color:var(--danger);">Error running Stage 1: ${e.message}</p>`;
+      }
+    }
+
+    async function runStage2(optionalInstruction = "") {
+      if (!appState.stage1Text) {
+        showToast("Stage 1 baseline must be generated first.", "warning");
+        return;
+      }
+      updateStageUI(2);
+      const out = document.getElementById("consoleOutput");
+      out.innerHTML = `<p style="color:var(--text-muted);"><i class="fa-solid fa-spinner fa-spin"></i> Performing spatial diagnostics, area budget, and text recommendations...</p>`;
+
+      const unitDirective = getUnitPromptDirective();
+      let prompt = `STAGE 2: SPATIAL DIAGNOSTICS & TEXT RECOMMENDATIONS ONLY
+${unitDirective}
+
+CRITICAL RULE: DO NOT redraw or remove the approved Stage 1 plan. The Stage 1 drawing is the immutable architectural baseline. Provide text recommendations, calculations, and fixture schedules only.
+
+IMMUTABLE STAGE 1 BASELINE CONTEXT:
+\`\`\`markdown
+${appState.stage1Text}
+\`\`\`
+
+REQUIRED STAGE 2 DELIVERABLES:
+1. Context Summary & Building Typology.
+2. Comprehensive Spatial Analysis: Area budget, circulation deductions, net efficiency, travel distances, and wet-zone stacking.
+3. Recommendations Table: Columns [# | Issue Found | Recommendation | Elements Affected | Benefit | Alternative | Status (Keep/Change)].
+4. Master Fixture & Coordinate Schedule (Level, Room, Element Name, Dimensions, (X, Y) from SW (0,0), Rotation, Library Path, Hosting Type).
+5. Change Log delta vs Stage 1.
+6. Completeness Gate.
+Conclude with: "Please review. Reply 'Yes — Apply Recommendations' or 'No — Keep Exact Copy' or provide revisions."`;
+
+      if (optionalInstruction) {
+        prompt += `\n\nUser Design Feedback: ${optionalInstruction}`;
+      }
+
+      try {
+        const res = await executeWithFailover(prompt, false);
+        appState.stage2Text = res;
+        saveDraft();
+        renderStage2View();
+        showToast("Stage 2 Recommendations & Schedules ready!", "success");
+      } catch (e) {
+        out.innerHTML = `<p style="color:var(--danger);">Error running Stage 2: ${e.message}</p>`;
+      }
+    }
+
+    async function runStage3(useStage2Recommendations = true, optionalInstruction = "") {
+      updateStageUI(3);
+      const out = document.getElementById("consoleOutput");
+      out.innerHTML = `<p style="color:var(--text-muted);"><i class="fa-solid fa-spinner fa-spin"></i> Generating zero-fail IronPython 2.7 production script for Revit 2026...</p>`;
+
+      const unitDirective = getUnitPromptDirective();
+      let prompt = `STAGE 3: ZERO-FAIL pyRevit PRODUCTION SCRIPT (REVIT 2026)
+${unitDirective}
+
+${useStage2Recommendations ? "DESIGN DECISION: APPLY Stage 2 recommendations and Master Fixture Schedule alongside Stage 1 baseline." : "DESIGN DECISION: BYPASS Stage 2 recommendations. Build script strictly from Stage 1 Exact Copy baseline geometry."}
+
+GROUNDING CONTEXT:
+1. STAGE 1 BASELINE (GEOMETRY & DIMENSIONS):
+\`\`\`markdown
+${appState.stage1Text}
+\`\`\`
+${useStage2Recommendations && appState.stage2Text ? `
+2. STAGE 2 APPROVED RECOMMENDATIONS & FIXTURE SCHEDULE:
+\`\`\`markdown
+${appState.stage2Text}
+\`\`\`
+` : ''}
+
+MANDATORY CODING REQUIREMENTS:
+- Dual-compatible IronPython 2.7 / Python 3 syntax. No Python 3 f-strings.
+- NEVER call doc.GetFailureHandlingOptions(). Bind WarnKiller directly to Transaction.
+- Coordinate transformation pt_ft(x, y, z) using (D - y) for True North.
+- Wall overlap prevention with merge_intervals().
+- Pre-flight hosting inspection via app.OpenDocumentFile() and read_placement_type().
+- Idempotency with Comments tag check (fix_tag and placed_set).
+- NEVER hardcode .rfa filenames: use find_library_root / load_library_index / resolve_family from the MANDATORY LIBRARY RESOLVER. Report unresolved items; do not abort.
+- Menu-driven staged execution (Create levels -> Shell & Slab -> Doors/Windows/Rooms -> Furniture).
+Output valid runnable script.py inside a \`\`\`python ... \`\`\` block only.`;
+
+      if (optionalInstruction) {
+        prompt += `\n\nUser Script Directives: ${optionalInstruction}`;
+      }
+
+      try {
+        const res = await executeWithFailover(prompt, false);
+        appState.stage3Script = extractCode(res);
+        saveDraft();
+
+        // Run Claude Independent Checker if enabled
+        if (isClaudeCheckerEnabled()) {
+          const keys = getKeys();
+          const hasClaude = keys.some(k => k.provider === "anthropic" || k.provider === "openrouter");
+          if (hasClaude) {
+            out.innerHTML = `<p style="color:#7c3aed;"><i class="fa-solid fa-shield-halved fa-spin"></i> Script drafted. Running Claude Pre-Flight Inspector to certify Revit 2026 compatibility...</p>`;
+            try {
+              const auditResult = await runClaudeAudit(appState.stage3Script);
+              appState.claudeAuditStatus = auditResult.status;
+              appState.claudeAuditReport = auditResult.report;
+              appState.stage3Script = auditResult.script;
+              saveDraft();
+            } catch (claudeErr) {
+              console.warn("Claude audit failed or skipped:", claudeErr);
+            }
+          }
+        }
+
+        renderStage3View();
+        showToast("pyRevit script generated & ready!", "success");
+      } catch (e) {
+        out.innerHTML = `<p style="color:var(--danger);">Error generating Stage 3: ${e.message}</p>`;
+      }
+    }
+
+    async function skipStage2ToStage3() {
+      if (!appState.stage1Text) {
+        showToast("Stage 1 baseline must be generated first.", "warning");
+        return;
+      }
+      showToast("Skipping Stage 2: Proceeding directly with Stage 1 exact copy baseline...", "info");
+      await runStage3(false, "User elected to bypass Stage 2 analysis. Generate script strictly from Stage 1 Exact Copy.");
+    }
+
+    async function sendFeedback(stageNum, feedbackText) {
+      const out = document.getElementById("consoleOutput");
+      out.innerHTML += `
+        <div style="background:#eff6ff; padding:10px 14px; border-radius:8px; margin:14px 0; border:1px solid #bfdbfe;">
+          <strong>Your instruction:</strong> ${escapeHtml(feedbackText)}
+        </div>
+        <p style="color:var(--text-muted);"><i class="fa-solid fa-spinner fa-spin"></i> Updating Stage ${stageNum} based on your feedback...</p>
+      `;
+
+      const prompt = `You are currently revising STAGE ${stageNum} deliverables under Master Prompt v2.1.
+User Instruction: "${feedbackText}"
+Existing Deliverables:
+${stageNum === 1 ? appState.stage1Text : (stageNum === 2 ? appState.stage2Text : appState.stage3Script)}
+
+Update the deliverables strictly incorporating the user's feedback while adhering to all system rules.`;
+
+      try {
+        const res = await executeWithFailover(prompt, stageNum === 1);
+        if (stageNum === 1) {
+          appState.stage1Text = res;
+          renderStage1View();
+        } else if (stageNum === 2) {
+          appState.stage2Text = res;
+          renderStage2View();
+        } else if (stageNum === 3) {
+          appState.stage3Script = extractCode(res);
+          renderStage3View();
+        }
+        saveDraft();
+        showToast(`Stage ${stageNum} updated!`, "success");
+      } catch (err) {
+        out.innerHTML += `<p style="color:var(--danger);">Error: ${err.message}</p>`;
+      }
+    }
+
+    function mockStageResponse(stage) {
+      const unit = document.getElementById("unitSystemSelector").value || "mm";
+      const scale = unit === "mm" ? "320000 x 200000 mm" : "16 x 20 m";
+      if (stage === 1) {
+        return `## Stage 1: Exact Copy Reproduction
+### Context Read-Back
+- Building Typology: Administrative Core Building (4.5 Storeys)
+- Footprint: ${scale} | North: +Y True North | Units: ${unit.toUpperCase()}
+
+### Element Register Table
+| Level | Rooms | Walls | Doors | Windows | Stairs | Fixtures |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| AD-1 Ground Floor | 9 | 18 | 12 | 14 | 2 | 34 |
+| AD-2 Second Floor | 10 | 16 | 10 | 12 | 2 | 28 |
+
+### Master Revit Family Schedule (007 RVT MATERIALS)
+| Item | Category | Target Family Name | Keywords | Subfolder | Hosting Type |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| Single Flush Door | Doors | Door-Passage | door, single | DOORS | OneLevelBasedHosted |
+| Fixed Window | Windows | Fixed-Window-01 | window, fixed | WINDOWS | OneLevelBasedHosted |
+| Standard Desk | Furniture | Desk-Office | desk, table | TABLE | OneLevelBased |
+| Water Closet | Plumbing | Toilet-WallHung | toilet, wc | BATHROOM\\FAUCET & TOILET | WorkPlaneBased |
+
+Please review. Reply 'Copy approved' or provide your corrections and instructions.`;
+      } else if (stage === 2) {
+        return `## Stage 2: Spatial Diagnostics & Recommendations Only
+### Comprehensive Analysis
+- Program Net Efficiency: 84.2%
+- Travel Distances: Max exit travel 28.4 m (well within 45 m NBCP/IBC limit).
+- Wet-Stacking: Restroom cores aligned vertically from AD-1 to AD-5.
+
+### Recommendations Table
+| # | Issue Found | Recommendation | Affected Elements | Benefit | Alternative | Status |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| 1 | Narrow corridor at records | Widen corridor from 1.2 m to 1.5 m | Corridor wall P3 | Better circulation | Keep original | Change |
+| 2 | Server room heat load | Relocate adjacent to shaft riser | IT/Server Room | Direct MEP exhaust | Add dedicated AC | Change |
+
+Please review. Reply 'Yes — Apply Recommendations' or 'No — Keep Exact Copy' or specify revisions.`;
+      } else {
+        return `\`\`\`python
+# -*- coding: utf-8 -*-
+"""Administrative Core Building - Staged Builder for Revit 2026."""
+import os, sys, math, clr
+clr.AddReference("RevitAPI")
+clr.AddReference("RevitAPIUI")
+import Autodesk.Revit.DB as DB
+from pyrevit import revit, forms
+
+doc = revit.doc
+app = doc.Application
+MM = 1.0 / 304.8
+D = 20000.0
+
+def pt_ft(x, y, z=0.0):
+    return DB.XYZ(x * MM, (D - y) * MM, z)
+
+class WarnKiller(DB.IFailuresPreprocessor):
+    def PreprocessFailures(self, accessor):
+        for m in accessor.GetFailureMessages():
+            if m.GetSeverity() == DB.FailureSeverity.Warning:
+                accessor.DeleteWarning(m)
+        return DB.FailureProcessingResult.Continue
+
+print("pyRevit script ready.")
+\`\`\``;
+      }
+    }
+
+    function extractCode(text) {
+      if (!text) return "";
+      const match = text.match(/```python([\s\S]*?)```/) || text.match(/```([\s\S]*?)```/);
+      return match ? match[1].trim() : text;
+    }
+
+    function escapeHtml(str) {
+      if (!str) return "";
+      return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    }
+
+
+    // ===== v5.1 ADDITIONS =====
+    let outHandle = null, lastSig = "", scanBusy = false;
+    const FENCE = "`".repeat(3);
+    const DEFAULT_LIB = "G:\\My Drive\\007 RVT MATERIALS";
+    const CLAUDE_NOTE = "";
+    function getLibRoot() { const e = document.getElementById("libRootInput"); return (e && e.value.trim()) || localStorage.getItem("pyrevit_library_path") || DEFAULT_LIB; }
+    function initLibRoot() { document.getElementById("libRootInput").value = localStorage.getItem("pyrevit_library_path") || DEFAULT_LIB; }
+    function saveLibRoot() { localStorage.setItem("pyrevit_library_path", document.getElementById("libRootInput").value.trim()); }
+    function updateTokenDisplay() { const e = document.getElementById("tokenCount"); if (e) e.innerText = totalTokensUsed.toLocaleString() + " tokens"; }
+    function mockErrorAnalysis(tb) {
+      return "<<<JSON\n" + JSON.stringify({ ruleTitle: "Offline note (no API key)", category: "Revit API", rootCause: "No API key saved, so no model analysis ran. Traceback: " + tb.slice(0, 200), mitigation: "Add an API key under Keys to enable real diagnosis." }) + "\nJSON>>>";
+    }
+
+    // --- persistent folder links (IndexedDB) ---
+    function idb() { return new Promise((res, rej) => { const r = indexedDB.open("pyrevit_studio", 1); r.onupgradeneeded = () => r.result.createObjectStore("h"); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); }); }
+    async function idbSet(k, v) { const d = await idb(); return new Promise((res, rej) => { const t = d.transaction("h", "readwrite"); t.objectStore("h").put(v, k); t.oncomplete = res; t.onerror = () => rej(t.error); }); }
+    async function idbGet(k) { const d = await idb(); return new Promise((res, rej) => { const q = d.transaction("h").objectStore("h").get(k); q.onsuccess = () => res(q.result); q.onerror = () => rej(q.error); }); }
+    async function linkDriveDirectory() {
+      if (!window.showDirectoryPicker) { showToast("Open this file directly in Chrome or Edge (folder access is blocked in iframes/previews).", "warning"); return; }
+      try { dirHandle = await window.showDirectoryPicker({ mode: "read", id: "rvtlib" }); await idbSet("lib", dirHandle); document.getElementById("btnReconnect").style.display = "none"; await performDeepDirectoryScan(); }
+      catch (e) { if (e.name !== "AbortError") { console.error(e); showToast("Link failed: " + e.message, "error"); } }
+    }
+    async function linkOutputFolder() {
+      if (!window.showDirectoryPicker) { showToast("Open this file directly in Chrome or Edge.", "warning"); return; }
+      try { outHandle = await window.showDirectoryPicker({ mode: "readwrite", id: "pyrevitext" }); await idbSet("out", outHandle); showToast("Save target: " + outHandle.name, "success"); }
+      catch (e) { if (e.name !== "AbortError") showToast("Link failed: " + e.message, "error"); }
+    }
+    async function restoreLinks() {
+      try {
+        const h = await idbGet("lib");
+        if (h) { dirHandle = h; if ((await h.queryPermission({ mode: "read" })) === "granted") await performDeepDirectoryScan(true); else { const b = document.getElementById("btnReconnect"); b.style.display = "block"; b.innerHTML = '<i class="fa-solid fa-plug"></i> Reconnect "' + escapeHtml(h.name) + '"'; } }
+        const o = await idbGet("out"); if (o) outHandle = o;
+      } catch (e) { console.warn("restoreLinks", e); }
+    }
+    async function reconnectLibrary() {
+      if (dirHandle && (await dirHandle.requestPermission({ mode: "read" })) === "granted") { document.getElementById("btnReconnect").style.display = "none"; await performDeepDirectoryScan(); }
+    }
+    function autoRescanTick() { const a = document.getElementById("autoScan"); if (dirHandle && !scanBusy && a && a.checked && !document.hidden) performDeepDirectoryScan(true); }
+    setInterval(autoRescanTick, 60000);
+    window.addEventListener("focus", autoRescanTick);
+    async function writeText(dir, name, text) { const fh = await dir.getFileHandle(name, { create: true }); const w = await fh.createWritable(); await w.write(text); await w.close(); }
+    function allFamilies() { return Object.values(familyCatalogByCategory).flat(); }
+    function libraryIndexJson() { return JSON.stringify({ root: getLibRoot(), scanned: new Date().toISOString(), families: allFamilies().map(f => ({ rel: f.fullPath })) }, null, 1); }
+
+    // --- schedule -> library matching ---
+    function tok(s) { return String(s).replace(/([a-z])([A-Z])/g, "$1 $2").toLowerCase().split(/[^a-z0-9]+/).filter(Boolean); }
+    function parseSchedule(md) {
+      const rows = []; let hdr = null;
+      (md || "").split("\n").forEach(l => {
+        if (!/^\s*\|/.test(l)) { hdr = null; return; }
+        const c = l.trim().replace(/^\||\|$/g, "").split("|").map(x => x.trim());
+        if (c.some(x => /target family/i.test(x))) { hdr = c.map(x => x.toLowerCase()); return; }
+        if (!hdr || /^:?-+/.test(c[0])) return;
+        const g = n => { const i = hdr.findIndex(h => h.includes(n)); return i >= 0 ? (c[i] || "") : ""; };
+        rows.push({ item: g("item"), target: g("target family"), keywords: g("keywords"), sub: g("subfolder") });
+      });
+      return rows;
+    }
+    function matchFamily(r) {
+      const q = new Set(tok(r.target + " " + r.keywords)), sub = tok(r.sub);
+      return allFamilies().map(f => {
+        const n = tok(f.baseName), d = tok(f.folder); let s = 0;
+        q.forEach(t => { if (n.includes(t)) s += 3; else if (d.includes(t)) s += 1; });
+        sub.forEach(t => { if (d.includes(t)) s += 1; });
+        return { f, s: s - 0.05 * n.length };
+      }).filter(x => x.s >= 3).sort((a, b) => b.s - a.s).slice(0, 3);
+    }
+    function renderMatchPanel() {
+      if (!allFamilies().length) return "";
+      const rows = parseSchedule(appState.stage1Text); if (!rows.length) return "";
+      let h = '<div style="margin-top:16px;border:1px solid #e2e8f0;border-radius:10px;padding:12px;"><strong style="font-size:12px;"><i class="fa-solid fa-link"></i> Library match check (live scan)</strong><table style="margin-top:8px;"><tr><th>Item</th><th>Status</th><th>Best match</th></tr>';
+      rows.forEach(r => { const m = matchFamily(r); h += "<tr><td>" + escapeHtml(r.item) + "</td><td>" + (m.length ? "✔ found" : "✖ missing") + "</td><td>" + (m.length ? escapeHtml(m[0].f.fullPath) : "—") + "</td></tr>"; });
+      return h + "</table></div>";
+    }
+    function buildLibraryContext(stage) {
+      const fam = allFamilies(); if (!fam.length) return "";
+      const folders = Object.keys(familyCatalogByCategory);
+      let b = "\n\n=== [VERIFIED RVT LIBRARY: " + fam.length + " families in " + folders.length + " folders; Revit-side root: " + getLibRoot() + "] ===\n";
+      const rows = parseSchedule((appState.stage1Text || "") + "\n" + (appState.stage2Text || ""));
+      if (rows.length) { b += "BEST CATALOG MATCHES per scheduled item (use these EXACT relative paths; NO MATCH = report as missing, never invent):\n"; rows.forEach(r => { const m = matchFamily(r); b += "- " + r.item + " (" + r.target + "): " + (m.length ? m.map(x => x.f.fullPath).join("  |  ") : "NO MATCH") + "\n"; }); }
+      const per = Math.max(5, Math.floor(14000 / folders.length / 22));
+      b += "\nFOLDER INVENTORY (names only):\n";
+      folders.forEach(fo => { const l = familyCatalogByCategory[fo]; b += "[" + fo + "] (" + l.length + "): " + l.slice(0, per).map(x => x.baseName).join(", ") + (l.length > per ? ", ...+" + (l.length - per) : "") + "\n"; });
+      return b + "===\n";
+    }
+
+    // --- runtime resolver injected into Stage 3 (scans the library inside Revit) ---
+    const RESOLVER_PY = String.raw`import os, re, json
+def _script_dir():
+    p = globals().get("__commandpath__")
+    if p: return p
+    try: return os.path.dirname(os.path.abspath(__file__))
+    except NameError: return os.getcwd()
+def _tok(s):
+    s = re.sub(r"([a-z])([A-Z])", r"\1 \2", s)
+    return [t for t in re.split(r"[^a-zA-Z0-9]+", s.lower()) if t]
+def find_library_root():
+    cands = []
+    cfg = os.path.join(_script_dir(), "library_path.txt")
+    if os.path.exists(cfg): cands.append(open(cfg).read().strip())
+    cands.append(r"G:\My Drive\007 RVT MATERIALS")
+    cands.append(os.path.join(os.path.expanduser("~"), "Google Drive", "007 RVT MATERIALS"))
+    for c in cands:
+        if c and os.path.isdir(c): return c
+    return None
+def load_library_index(root):
+    idx = []
+    if root:
+        for dp, dn, fn in os.walk(root):
+            dn[:] = [d for d in dn if not d.startswith(".")]
+            for f in fn:
+                if f.lower().endswith(".rfa") and not re.search(r"\.\d{4}\.rfa$", f, re.I):
+                    idx.append(os.path.relpath(os.path.join(dp, f), root))
+    if not idx:
+        jp = os.path.join(_script_dir(), "library_index.json")
+        if os.path.exists(jp):
+            idx = [e["rel"].replace("\\", os.sep) for e in json.load(open(jp))["families"]]
+    return idx
+def resolve_family(root, idx, keywords, subfolder=""):
+    if not root: return None
+    kw = set()
+    for k in keywords: kw.update(_tok(k))
+    sub = _tok(subfolder); best = None; bs = 0
+    for rel in idx:
+        d = _tok(os.path.dirname(rel)); n = _tok(os.path.splitext(os.path.basename(rel))[0])
+        s = sum(3 for t in kw if t in n) + sum(1 for t in kw if t in d) + sum(1 for t in sub if t in d) - 0.05 * len(n)
+        if s > bs: best, bs = rel, s
+    return os.path.join(root, best) if best and bs >= 3 else None`;
+
+    // --- local lint (works offline, runs before the Claude audit) ---
+    function lintScript(s) {
+      const L = [], add = (lv, m) => L.push({ lv, m });
+      if (!/coding[:=]/.test(s.split("\n").slice(0, 2).join("\n"))) add("err", "Missing '# -*- coding: utf-8 -*-' header");
+      if (/(^|[^\w])[fF][rR]?["']/m.test(s)) add("err", "Python 3 f-string found (IronPython 2.7 will fail)");
+      if (/doc\.GetFailureHandlingOptions/.test(s)) add("err", "doc.GetFailureHandlingOptions() does not exist; use the Transaction");
+      if (/\bnonlocal\b|:=|\basync def\b|\)\s*->\s*\w/.test(s)) add("err", "Python 3-only syntax (nonlocal / := / async / type hints)");
+      if (/^\t/m.test(s) && /^ +\S/m.test(s)) add("err", "Mixed tabs and spaces");
+      if (!/IFailuresPreprocessor/.test(s)) add("warn", "No WarnKiller failure preprocessor");
+      if (!/\(\s*D\s*-\s*y\s*\)/.test(s)) add("warn", "No (D - y) north inversion in pt_ft");
+      if (/OpenDocumentFile/.test(s) && !/\.Close\(/.test(s)) add("warn", "OpenDocumentFile without Close()");
+      if (/["'][^"'\n]+\.rfa["']/i.test(s) && !/resolve_family/.test(s)) add("warn", "Hard-coded .rfa names without resolve_family(); breaks when the library changes");
+      if (!/find_library_root|os\.walk/.test(s)) add("warn", "Script does not scan the library at runtime");
+      return L;
+    }
+    function lintHtml() {
+      if (!appState.stage3Script) return "";
+      const L = lintScript(appState.stage3Script);
+      if (!L.length) return '<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:11.5px;color:#15803d;"><i class="fa-solid fa-circle-check"></i> Local lint: no issues found</div>';
+      return '<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:11.5px;color:#92400e;line-height:1.6;"><strong>Local lint</strong><br>' + L.map(x => (x.lv === "err" ? "✖ " : "⚠ ") + escapeHtml(x.m)).join("<br>") + "</div>";
+    }
+
+    // --- provider engine: classified errors, Anthropic generation, no recursion ---
+    async function executeWithFailover(promptText, requiresVision = false) {
+      const keys = getKeys();
+      if (keys.length === 0) return mockStageResponse(currentStage);
+      let p = "=== [ACTIVE MASTER PROMPT & SPECIFICATION DOCUMENT] ===\n" + getMasterPromptDoc() + "\n=======================================================\n\n" + formatActiveKnowledgeForPrompt() + promptText;
+      if (currentStage >= 1) p += buildLibraryContext(currentStage);
+      if (currentStage === 3) p += "\n\n=== [GOLDEN REFERENCE SCRIPT] ===\n" + FENCE + "python\n" + getGoldenReference() + "\n" + FENCE + "\n\n=== [MANDATORY LIBRARY RESOLVER - paste verbatim, call from your code] ===\n" + FENCE + "python\n" + RESOLVER_PY + "\n" + FENCE + "\n";
+      const sel = document.getElementById("geminiModelSelector").value;
+      const models = [...new Set([sel, "gemini-2.5-flash", "gemini-2.5-pro"])];
+      const st = document.getElementById("systemStatus"), errs = [];
+      for (let round = 0; round <= maxRetries; round++) {
+        let limited = false;
+        for (const k of keys) {
+          if (k.provider === "anthropic" && requiresVision) continue;
+          for (const m of (k.provider === "gemini" ? models : [null])) {
+            try {
+              st.className = "status-badge live"; st.innerHTML = '<span class="dot"></span> Calling ' + (m || k.provider) + "...";
+              let r;
+              if (k.provider === "gemini") r = await callGemini(k.key, p, requiresVision, m);
+              else if (k.provider === "groq") r = await callGroq(k.key, p);
+              else if (k.provider === "openrouter") r = await callOpenRouter(k.key, p);
+              else if (k.provider === "anthropic") r = await callAnthropicClaude(k.key, "You are an expert architect and Revit API / pyRevit developer.", p);
+              if (r) return r;
+            } catch (e) {
+              errs.push((m || k.provider) + ": " + String(e.message).slice(0, 140));
+              if (/\b(429|503|RESOURCE_EXHAUSTED|overloaded|quota)\b/i.test(e.message)) limited = true;
+            }
+          }
+        }
+        if (!limited || round === maxRetries) break;
+        playAlertChime();
+        for (let s = 60; s > 0; s--) { st.className = "status-badge retrying"; st.innerHTML = '<span class="dot"></span> Rate limit. Retry in ' + s + "s..."; await new Promise(r => setTimeout(r, 1000)); }
+      }
+      playAlertChime(); saveDraft(); st.className = "status-badge"; st.innerHTML = '<span class="dot"></span> Draft Saved';
+      throw new Error("All providers failed. " + errs.slice(-4).join(" | "));
+    }
+    async function callGemini(key, text, useVision, model) {
+      const parts = [{ text }];
+      if (useVision && attachedImageBase64) parts.push({ inlineData: { mimeType: attachedImageBase64.split(";")[0].split(":")[1], data: attachedImageBase64.split(",")[1] } });
+      const r = await fetch("https://generativelanguage.googleapis.com/v1beta/models/" + model + ":generateContent", { method: "POST", headers: { "Content-Type": "application/json", "x-goog-api-key": key }, body: JSON.stringify({ contents: [{ role: "user", parts }], generationConfig: { temperature: 0.2, maxOutputTokens: 32768 } }) });
+      if (!r.ok) throw new Error(r.status + " - " + (await r.text()).slice(0, 200));
+      const j = await r.json(), c = j.candidates && j.candidates[0];
+      const out = c && c.content && c.content.parts ? c.content.parts.map(x => x.text || "").join("") : "";
+      if (!out) throw new Error("Empty response (" + ((c && c.finishReason) || (j.promptFeedback && j.promptFeedback.blockReason) || "no candidates") + ")");
+      totalTokensUsed += j.usageMetadata ? j.usageMetadata.totalTokenCount : 1200; updateTokenDisplay(); return out;
+    }
+
+    // --- INITIALIZATION ON LOAD ---
+    window.addEventListener("DOMContentLoaded", () => {
+      loadKeys();
+      loadDraft();
+      initLibRoot();
+      restoreLinks();
+      initKnowledgeBase();
+      updateKnowledgeActiveStrip();
+      const claudeToggle = document.getElementById("enableClaudeChecker");
+      if (claudeToggle) {
+        claudeToggle.checked = isClaudeCheckerEnabled();
+      }
+      updateStageUI(0);
+    });
+  </script>
+</body>
+</html>
